@@ -942,6 +942,19 @@ input[type=file]{display:none}
   padding-left:max(16px,calc((100% - 940px) / 2));
   padding-right:max(16px,calc((100% - 940px) / 2));
 }
+.reps-sel{padding:6px 8px;font-size:.78rem;max-width:none}
+.kb-btn{padding:9px 11px}
+.sc-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 28px}
+.sc-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);font-size:.84rem}
+.sc-row .keys{display:flex;gap:4px;flex:none}
+.sc-h{grid-column:1/-1;margin:14px 0 2px;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.sc-h:first-child{margin-top:0}
+kbd{
+  font:600 .72rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--text);
+  background:var(--panel2);border:1px solid var(--line2);border-bottom-width:2px;
+  border-radius:6px;padding:4px 7px;min-width:24px;text-align:center;
+}
+@media(max-width:640px){.sc-grid{grid-template-columns:1fr}}
 .nav-toggle{padding:9px 11px}
 .srt-mode .nav-toggle{display:none}
 .nav-toggle[aria-pressed="true"]{color:var(--text);border-color:var(--line2)}
@@ -1171,6 +1184,9 @@ input[type=file]{display:none}
       </button>
       <div class="p-divider"></div>
       <button class="btn ghost" id="resetPackBtn">Reset</button>
+      <button class="btn kb-btn" id="kbBtn" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="3.5" width="13" height="9" rx="1.6"/><path d="M4.5 6.5h.01M7 6.5h.01M9.5 6.5h.01M12 6.5h.01M5 9.5h6"/></svg>
+      </button>
       <div class="menu-wrap" id="menuWrap">
         <button class="btn menu-btn" id="menuBtn" aria-label="Notes, images and info" aria-haspopup="true" aria-expanded="false" title="Notes, images and info">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M2.5 4h11M2.5 8h11M2.5 12h11"/></svg>
@@ -1290,7 +1306,10 @@ input[type=file]{display:none}
           <span class="audio-status-text" id="audioStatusText">No reference audio</span>
         </span>
         <div style="flex:1"></div>
-        <span style="font-size:.74rem;color:var(--muted)">Speed</span>
+        <span style="font-size:.74rem;color:var(--muted)" title="Play each line back-to-back this many times before moving on">Loop each line</span>
+        <select class="voice-sel reps-sel" id="loopSel" aria-label="Loop each line" title="Loop each line (- / +)"></select>
+        <span id="loopBadge" style="font-size:.74rem;color:var(--text);font-variant-numeric:tabular-nums;min-width:64px"></span>
+        <span style="font-size:.74rem;color:var(--muted);margin-left:6px">Speed</span>
         <div class="modes">
           <button class="pill sm" data-speed="0.5">0.5×</button>
           <button class="pill sm" data-speed="0.75">0.75×</button>
@@ -1405,6 +1424,42 @@ input[type=file]{display:none}
 <!-- ============================================================
      UPLOAD MODAL
      ============================================================ -->
+<div class="modal" id="shortcutsModal">
+  <div class="modal-bg" data-sc-close></div>
+  <div class="modal-panel" style="max-width:640px">
+    <header class="modal-head">
+      <h2>Keyboard shortcuts</h2>
+      <button class="close" data-sc-close>✕</button>
+    </header>
+    <div class="modal-body">
+      <div class="sc-grid">
+        <div class="sc-h">Playback</div>
+        <div class="sc-row"><span>Play / pause</span><span class="keys"><kbd>Space</kbd></span></div>
+        <div class="sc-row"><span>Stop</span><span class="keys"><kbd>S</kbd></span></div>
+        <div class="sc-row"><span>Pause</span><span class="keys"><kbd>P</kbd></span></div>
+        <div class="sc-row"><span>Back / forward 5s</span><span class="keys"><kbd>,</kbd><kbd>.</kbd></span></div>
+        <div class="sc-row"><span>Slower / faster</span><span class="keys"><kbd>[</kbd><kbd>]</kbd></span></div>
+        <div class="sc-row"><span>Bookmark</span><span class="keys"><kbd>B</kbd></span></div>
+        <div class="sc-row"><span>Speak with Voice</span><span class="keys"><kbd>V</kbd></span></div>
+
+        <div class="sc-h">Practice</div>
+        <div class="sc-row"><span>Previous / next line</span><span class="keys"><kbd>←</kbd><kbd>→</kbd></span></div>
+        <div class="sc-row"><span>Repeat (run current mode)</span><span class="keys"><kbd>Enter</kbd></span></div>
+        <div class="sc-row"><span>Record / stop</span><span class="keys"><kbd>R</kbd></span></div>
+        <div class="sc-row"><span>Play my recording</span><span class="keys"><kbd>K</kbd></span></div>
+        <div class="sc-row"><span>Chorus / Shadow / Independent</span><span class="keys"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd></span></div>
+        <div class="sc-row"><span>Loop each line: less / more</span><span class="keys"><kbd>-</kbd><kbd>+</kbd></span></div>
+
+        <div class="sc-h">Interface</div>
+        <div class="sc-row"><span>Hide / show left menu</span><span class="keys"><kbd>H</kbd></span></div>
+        <div class="sc-row"><span>Notes, Images, Info menu</span><span class="keys"><kbd>M</kbd></span></div>
+        <div class="sc-row"><span>Show this panel</span><span class="keys"><kbd>?</kbd></span></div>
+        <div class="sc-row"><span>Close panels</span><span class="keys"><kbd>Esc</kbd></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="uploadModal">
   <div class="modal-bg" data-close></div>
   <div class="modal-panel">
@@ -2530,6 +2585,7 @@ function renderPractice(){
   /* SRT lessons get the two-column layout + hamburger menu */
   const practiceView = document.getElementById("viewPractice");
   practiceView.classList.toggle("srt-mode", ex.type === "srt");
+  renderLoopSel();
 
   const wordEl = document.getElementById("targetWord");
   const wordTxt = item ? item.text : "—";
@@ -2599,7 +2655,7 @@ function updateFootInfo(){
   const reps = currentProg.repetitions[k] || 0;
   document.getElementById("footInfo").textContent =
     "Item " + (currentProg.item + 1) + " of " + ex.items.length +
-    " · " + reps + " / " + currentPack.defaultRepetitions + " reps" +
+    " · " + reps + " / " + repsTarget() + " reps" +
     (currentProg.completed[k] ? " · ✓ complete" : "");
 }
 
@@ -2624,7 +2680,7 @@ function updateChipsLight(){
       const reps = currentProg.repetitions[kk] || 0;
       meta.textContent = currentProg.completed[kk]
         ? "✓ done"
-        : reps + " / " + currentPack.defaultRepetitions;
+        : reps + " / " + repsTarget();
     }
   });
 
@@ -2719,10 +2775,76 @@ function syncItemToTime(t){
   }
 }
 
+/* Repetitions needed for a line to count as done (pack setting) */
+function repsTarget(){ return currentPack.defaultRepetitions; }
+
+/* ---- Loop: how many times each line is played back-to-back ----
+   1 = off (play once), 0 = infinite, N = N times */
+const LOOP_OPTIONS = [1,2,3,4,5,6,8,10,0];
+function loopCount(){
+  const v = currentProg ? Number(currentProg.loopCount) : 1;
+  return (Number.isFinite(v) && v >= 0) ? Math.floor(v) : 1;
+}
+function loopLabel(v){ return v === 1 ? "Off" : v === 0 ? "∞" : v + "×"; }
+function renderLoopSel(){
+  const sel = document.getElementById("loopSel");
+  if(!sel || !currentProg) return;
+  const cur = loopCount();
+  const vals = LOOP_OPTIONS.slice();
+  if(!vals.includes(cur)) vals.push(cur);
+  sel.innerHTML = vals.map(v => '<option value="' + v + '">' + loopLabel(v) + '</option>').join("");
+  sel.value = String(cur);
+}
+function setLoopCount(n){
+  if(!currentProg) return;
+  currentProg.loopCount = n;
+  saveDB();
+  renderLoopSel();
+  updateLoopBadge(activeAudio);
+  toast(n === 1 ? "Loop off" : "Loop each line: " + loopLabel(n));
+}
+function stepLoop(dir){
+  const i = LOOP_OPTIONS.indexOf(loopCount());
+  const n = Math.max(0, Math.min(LOOP_OPTIONS.length - 1, (i < 0 ? 0 : i) + dir));
+  if(LOOP_OPTIONS[n] !== loopCount()) setLoopCount(LOOP_OPTIONS[n]);
+}
+function updateLoopBadge(audio){
+  const el = document.getElementById("loopBadge");
+  if(!el) return;
+  const n = loopCount();
+  const on = audio && activeAudio === audio && n !== 1 && !audio._loopDone && !audio.paused;
+  const txt = on ? "Loop " + ((audio._loopPass || 0) + 1) + " / " + (n === 0 ? "∞" : n) : "";
+  if(el.textContent !== txt) el.textContent = txt;
+}
+function itemIndexAtTime(ex, t){
+  for(let i = ex.items.length - 1; i >= 0; i--){
+    const x = ex.items[i];
+    if(Number.isFinite(x.start) && t >= x.start) return i;
+  }
+  return 0;
+}
+/* Called each time a line finishes one pass. Returns true if it should play again. */
+function loopPassDone(audio, ex, it, restartAt){
+  const n = loopCount();
+  incrementRepForItemSilent(ex, it);
+  saveDB();
+  refreshItemUI();
+  audio._loopPass = (audio._loopPass || 0) + 1;
+  if(n === 0 || audio._loopPass < n){
+    try{ audio.currentTime = restartAt; }catch(e){}
+    audio._lastTime = restartAt;
+    updateLoopBadge(audio);
+    return true;
+  }
+  audio._loopDone = true;
+  updateLoopBadge(audio);
+  return false;
+}
+
 function incrementRepForItemSilent(ex, it){
   const k = ex.id + "::" + it.id;
   currentProg.repetitions[k] = (currentProg.repetitions[k] || 0) + 1;
-  if(currentProg.repetitions[k] >= currentPack.defaultRepetitions){
+  if(currentProg.repetitions[k] >= repsTarget()){
     currentProg.completed[k] = true;
   }
 }
@@ -2837,7 +2959,7 @@ function renderChips(){
     if(done) c.classList.add("done");
     c.innerHTML =
       '<div class="chip-word">' + escapeHtml(it.text) + '</div>' +
-      '<div class="chip-meta">' + (done ? "✓ done" : reps + " / " + currentPack.defaultRepetitions) + '</div>';
+      '<div class="chip-meta">' + (done ? "✓ done" : reps + " / " + repsTarget()) + '</div>';
     c.title = it.text;
     c.addEventListener("click", () => goToItem(i));
     grid.appendChild(c);
@@ -2892,7 +3014,7 @@ function renderPackInfo(){
     </div>
     <div class="guide-item">
       <strong>Contents</strong>
-      <span>${plural(currentPack.exercises.length, "exercise")} · ${plural(total, "item")} · ${currentPack.defaultRepetitions} repetitions per item</span>
+      <span>${plural(currentPack.exercises.length, "exercise")} · ${plural(total, "item")} · ${repsTarget()} repetitions per item</span>
     </div>
     <div class="guide-item">
       <strong>Audio loaded</strong>
@@ -2958,7 +3080,7 @@ function updatePlayPauseUI(){
 
 function stopAllAudio(){
   if(typeof stopTTS === "function") stopTTS();
-  if(activeAudio){ try{ activeAudio.pause(); activeAudio.currentTime = 0; }catch(e){} activeAudio = null; }
+  if(activeAudio){ try{ activeAudio.pause(); activeAudio.currentTime = 0; }catch(e){} clearInterval(activeAudio._loopTimer); activeAudio = null; updateLoopBadge(null); }
   if(recordAudio){ try{ recordAudio.pause(); recordAudio.currentTime = 0; }catch(e){} recordAudio = null; }
   if(activeRAF){ cancelAnimationFrame(activeRAF); activeRAF = null; }
   drawIdleWave(mainCanvas, "#4c4c57");
@@ -3063,7 +3185,7 @@ function playReference(offset){
       const forward = t > last && (t - last) < 1.5;
       let repChanged = false;
 
-      if(forward){
+      if(forward && loopCount() === 1){
         for(let i = 0; i < ex.items.length; i++){
           const xit = ex.items[i];
           if(Number.isFinite(xit.end) && last < xit.end && t >= xit.end
@@ -3095,7 +3217,7 @@ function playReference(offset){
       }
     }else{
       // Per-item playback: stop at the item's end time
-      if(segEnd != null && !audio._segStopped && t >= segEnd - 0.02){
+      if(loopCount() === 1 && segEnd != null && !audio._segStopped && t >= segEnd - 0.02){
         audio._segStopped = true;
         try{ audio.pause(); }catch(e){}
         if(activeAudio === audio) incrementRep();
@@ -3106,6 +3228,20 @@ function playReference(offset){
 
   audio.addEventListener("ended", () => {
     updatePlayPauseUI();
+    /* loop: the line runs to the very end of the file, so restart it here */
+    if(loopCount() !== 1 && !audio._loopDone && activeAudio === audio){
+      const ex = currentEx();
+      const it = continuous
+        ? (ex && ex.items[audio._loopIdx != null ? audio._loopIdx : ex.items.length - 1])
+        : currentItem();
+      if(ex && it){
+        const restart = continuous ? (Number.isFinite(it.start) ? it.start : 0) : segStart;
+        if(loopPassDone(audio, ex, it, restart)){
+          audio.play().catch(() => {});
+        }
+        return;
+      }
+    }
     if(continuous) return;  // auto-sync handles reps during the pass
     if(audio._segStopped) return;
     if(currentProg && (currentProg.mode === "chorus" || currentProg.mode === "shadow")) incrementRep();
@@ -3113,6 +3249,40 @@ function playReference(offset){
 
   audio.addEventListener("play",  updatePlayPauseUI);
   audio.addEventListener("pause", updatePlayPauseUI);
+
+  /* Loop watcher: polls often so the jump back is tight (timeupdate is too coarse) */
+  audio._loopTimer = setInterval(() => {
+    if(activeAudio !== audio){ clearInterval(audio._loopTimer); updateLoopBadge(null); return; }
+    if(audio.paused || audio.ended) return;
+    if(loopCount() === 1){
+      audio._loopPass = 0; audio._loopDone = false; updateLoopBadge(audio); return;
+    }
+    const ex = currentEx(); if(!ex) return;
+    const t = audio.currentTime;
+    let lit, restart;
+    if(continuous){
+      let idx = audio._loopIdx;
+      let cur = idx != null ? ex.items[idx] : null;
+      if(!cur || !Number.isFinite(cur.start) || !Number.isFinite(cur.end) ||
+         t < cur.start - 0.3 || t > cur.end + 0.4){
+        idx = itemIndexAtTime(ex, t);
+        audio._loopIdx = idx; audio._loopPass = 0; audio._loopDone = false;
+        cur = ex.items[idx];
+      }
+      lit = cur; restart = cur ? cur.start : 0;
+    }else{
+      lit = currentItem(); restart = segStart;
+    }
+    updateLoopBadge(audio);
+    if(!lit || !Number.isFinite(lit.end) || audio._loopDone) return;
+    if(t >= lit.end - 0.03){
+      const again = loopPassDone(audio, ex, lit, Number.isFinite(restart) ? restart : 0);
+      if(!again && !continuous){
+        audio._segStopped = true;
+        try{ audio.pause(); }catch(e){}
+      }
+    }
+  }, 40);
 
   audio.play()
     .then(() => { visualizeElement(audio, mainCanvas, "#e0e0e6"); updatePlayPauseUI(); })
@@ -3560,7 +3730,7 @@ function incrementRep(){
   if(!ex || !it) return;
   const k = ex.id + "::" + it.id;
   currentProg.repetitions[k] = (currentProg.repetitions[k] || 0) + 1;
-  if(currentProg.repetitions[k] >= currentPack.defaultRepetitions){
+  if(currentProg.repetitions[k] >= repsTarget()){
     currentProg.completed[k] = true;
   }
   saveDB();
@@ -4008,28 +4178,85 @@ document.getElementById("sortSeg").addEventListener("click", e => {
 });
 
 /* keyboard */
-document.addEventListener("keydown", e => {
-  const tag = document.activeElement.tagName;
-  if(["INPUT","TEXTAREA","SELECT"].includes(tag)) return;
-  if(!document.getElementById("viewPractice").classList.contains("active")) return;
+/* ---- shortcuts panel ---- */
+const shortcutsModal = document.getElementById("shortcutsModal");
+function openShortcuts(){ closeSideMenu(); shortcutsModal.classList.add("on"); }
+function closeShortcuts(){ shortcutsModal.classList.remove("on"); }
+document.getElementById("kbBtn").addEventListener("click", openShortcuts);
+shortcutsModal.querySelectorAll("[data-sc-close]").forEach(el => el.addEventListener("click", closeShortcuts));
 
-  if(e.code === "Space"){ e.preventDefault(); togglePlayPause(); }
-  if(e.key === "ArrowRight") document.getElementById("nextBtn").click();
-  if(e.key === "ArrowLeft")  document.getElementById("prevBtn").click();
-  if(e.key === "p" || e.key === "P") pausePlayback();
-  if(e.key === "b" || e.key === "B") addBookmark();
-  if(e.key === "," )  seekBy(-5);
-  if(e.key === "." )  seekBy(5);
-  if(e.key === "r" || e.key === "R"){
-    if(mediaRecorder) stopRecording();
-    else startRecording();
-  }
+const SPEED_STEPS = [0.5, 0.75, 1, 1.25];
+function setSpeed(v){
+  if(!currentProg) return;
+  currentProg.speed = v;
+  if(activeAudio) activeAudio.playbackRate = v;
+  saveDB();
+  renderControls();
+  toast("Speed " + v + "×");
+}
+function stepSpeed(dir){
+  const i = SPEED_STEPS.indexOf(Number(currentProg.speed));
+  const n = Math.max(0, Math.min(SPEED_STEPS.length - 1, (i < 0 ? 2 : i) + dir));
+  setSpeed(SPEED_STEPS[n]);
+}
+function setMode(m){
+  if(!currentProg) return;
+  currentProg.mode = m;
+  saveDB();
+  renderControls();
+}
+
+document.getElementById("loopSel").addEventListener("change", e => {
+  setLoopCount(Number(e.target.value));
+  e.target.blur();
+});
+
+document.addEventListener("keydown", e => {
   if(e.key === "Escape"){
+    if(shortcutsModal.classList.contains("on")){ closeShortcuts(); return; }
     if(document.getElementById("lightbox").classList.contains("on")){
       document.getElementById("lightbox").classList.remove("on");
       document.getElementById("lightboxImg").src = "";
     }
+    return;
   }
+  const tag = document.activeElement.tagName;
+  if(["INPUT","TEXTAREA","SELECT"].includes(tag)) return;
+  if(document.activeElement.isContentEditable) return;
+  if(!document.getElementById("viewPractice").classList.contains("active")) return;
+  if(e.ctrlKey || e.metaKey || e.altKey) return;
+  if(shortcutsModal.classList.contains("on")) return;
+
+  const key = e.key;
+  const k = key.length === 1 ? key.toLowerCase() : key;
+  const click = id => document.getElementById(id).click();
+  let handled = true;
+
+  if(e.code === "Space")            togglePlayPause();
+  else if(k === "ArrowRight")       click("nextBtn");
+  else if(k === "ArrowLeft")        click("prevBtn");
+  else if(k === "Enter" && tag !== "BUTTON" && tag !== "A") click("repeatBtn");
+  else if(k === "p")                pausePlayback();
+  else if(k === "s")                click("stopBtn");
+  else if(k === "b")                addBookmark();
+  else if(k === "v")                click("speakBtn");
+  else if(k === ",")                seekBy(-5);
+  else if(k === ".")                seekBy(5);
+  else if(k === "r"){ if(mediaRecorder) stopRecording(); else startRecording(); }
+  else if(k === "k")                click("playRecBtn");
+  else if(k === "1")                setMode("chorus");
+  else if(k === "2")                setMode("shadow");
+  else if(k === "3")                setMode("independent");
+  else if(k === "[")                stepSpeed(-1);
+  else if(k === "]")                stepSpeed(1);
+  else if(k === "-" || k === "_")   stepLoop(-1);
+  else if(k === "+" || k === "=")   stepLoop(1);
+  else if(k === "h" && !document.getElementById("viewPractice").classList.contains("srt-mode")) click("navToggle");
+  else if(k === "m")                click("menuBtn");
+  else if(k === "?")                openShortcuts();
+  else handled = false;
+
+  if(handled) e.preventDefault();
 });
 
 window.addEventListener("resize", () => {
