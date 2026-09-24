@@ -1016,14 +1016,14 @@ input[type=file]{display:none}
         Pack audio
       </label>
       <input id="packAudioInput" type="file" accept="audio/*">
-      <label class="btn" for="exerciseAudioInput" title="Load audio for the current exercise — enables auto-sync with SRT timecodes">
+      <label class="btn" for="exerciseAudioInput" title="Load one audio file for this exercise — for SRT lessons this is the only audio you need; it auto-syncs to every line's timecode">
         <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
           <path d="M2 6.5v3h2.5L8 12V4L4.5 6.5H2zM10.5 6a2.5 2.5 0 010 4"/>
         </svg>
         Exercise audio
       </label>
       <input id="exerciseAudioInput" type="file" accept="audio/*">
-      <label class="btn" for="lessonAudioInput" title="Load audio for the current item only">
+      <label class="btn" for="lessonAudioInput" id="itemAudioLabel" title="Load audio for the current item only">
         <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
           <path d="M8 11V2M4.5 5.5L8 2l3.5 3.5M2.5 13.5h11"/>
         </svg>
@@ -2356,6 +2356,12 @@ function renderPractice(){
   document.getElementById("exTitle").textContent = ex.title;
   document.getElementById("exDesc").textContent  = ex.description || "";
   document.getElementById("exCount").textContent = (currentProg.item + 1) + " / " + ex.items.length;
+
+  /* SRT lessons use a single exercise-wide audio file (auto-synced to each
+     line's timecode) instead of one recording per line, so hide the
+     per-item "Item audio" upload for this exercise type. */
+  const itemAudioLabel = document.getElementById("itemAudioLabel");
+  if(itemAudioLabel) itemAudioLabel.style.display = (ex.type === "srt") ? "none" : "";
 
   const wordEl = document.getElementById("targetWord");
   const wordTxt = item ? item.text : "—";
