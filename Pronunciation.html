@@ -1,0 +1,3578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pronunciation Dashboard</title>
+<style>
+/* ============================================================
+   TOKENS
+   ============================================================ */
+:root{
+  --bg:#101012;
+  --bg2:#151517;
+  --panel:#1b1b1f;
+  --panel2:#232328;
+  --panel3:#2b2b32;
+  --line:#2a2a31;
+  --line2:#3a3a44;
+  --text:#ececef;
+  --muted:#8c8c96;
+  --muted2:#6b6b75;
+  --accent:#ececef;
+  --accent-ink:#141416;
+  --good:#7fd1a0;
+  --warn:#e6b96b;
+  --danger:#e58a8a;
+  --track:#26262d;
+  --shadow-sm:0 4px 14px rgba(0,0,0,.28);
+  --shadow:0 18px 50px rgba(0,0,0,.5);
+  --shadow-lg:0 30px 90px rgba(0,0,0,.65);
+  --r-sm:8px;
+  --r:12px;
+  --r-lg:16px;
+  --r-xl:22px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  background:var(--bg);color:var(--text);
+  line-height:1.5;-webkit-font-smoothing:antialiased;
+  font-size:15px;min-height:100vh;
+}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+::selection{background:#3a3a48}
+a{color:inherit}
+
+/* ============================================================
+   COMPONENTS
+   ============================================================ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  background:var(--panel2);border:1px solid var(--line);color:var(--text);
+  padding:9px 14px;border-radius:var(--r-sm);
+  font-size:.85rem;font-weight:500;letter-spacing:-.005em;
+  transition:background .15s,border-color .15s,color .15s,transform .08s;
+  white-space:nowrap;
+}
+.btn:hover:not(:disabled){background:var(--panel3);border-color:var(--line2)}
+.btn:active:not(:disabled){transform:translateY(1px)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600}
+.btn.primary:hover:not(:disabled){background:#fff}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover:not(:disabled){background:var(--panel2);color:var(--text)}
+.btn.danger{color:var(--danger)}
+.btn.danger:hover:not(:disabled){background:rgba(229,138,138,.1);border-color:rgba(229,138,138,.3)}
+.btn.sm{padding:6px 10px;font-size:.78rem;border-radius:7px}
+.btn.icon{padding:9px 11px}
+.btn.lg{padding:11px 20px;font-size:.9rem}
+
+/* play/pause merged button */
+.btn.playing{
+  background:#3b1c1c;
+  border-color:#7c3636;
+  color:#ffb8b8;
+  font-weight:600;
+}
+.btn.playing:hover:not(:disabled){background:#4c2323;border-color:#a04a4a}
+
+.pill{
+  background:transparent;border:1px solid var(--line);color:var(--muted);
+  padding:7px 15px;border-radius:999px;font-size:.8rem;font-weight:500;
+  transition:.15s;white-space:nowrap;
+}
+.pill:hover:not(:disabled){color:var(--text);border-color:var(--line2)}
+.pill.active{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600}
+.pill.sm{padding:5px 11px;font-size:.74rem}
+
+.tag{
+  font-size:.66rem;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--muted);font-weight:700;
+}
+
+.badge{
+  font-size:.68rem;font-weight:700;
+  padding:4px 9px;border-radius:6px;
+  background:var(--panel2);color:var(--muted);
+  letter-spacing:.02em;font-variant-numeric:tabular-nums;
+}
+
+.input{
+  background:var(--panel);border:1px solid var(--line);
+  color:var(--text);border-radius:var(--r-sm);
+  padding:9px 13px;font-size:.85rem;width:100%;
+  transition:border-color .15s,background .15s;
+}
+.input:focus{outline:none;border-color:var(--line2);background:var(--panel2)}
+.input::placeholder{color:var(--muted2)}
+
+.wave{
+  background:#0d0d10;border:1px solid var(--line);
+  border-radius:10px;padding:6px;overflow:hidden;
+}
+.wave canvas{display:block;width:100%;height:100%}
+
+/* audio status pill */
+.audio-status{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:.74rem;color:var(--muted);
+  padding:5px 12px 5px 10px;border-radius:999px;
+  border:1px solid var(--line);
+  background:var(--panel);
+  transition:.2s;max-width:100%;
+}
+.audio-status.ready{
+  color:var(--good);
+  border-color:rgba(127,209,160,.32);
+  background:rgba(127,209,160,.06);
+}
+.audio-status.syncing{
+  color:#a8c6f0;
+  border-color:rgba(140,180,240,.32);
+  background:rgba(140,180,240,.07);
+}
+.audio-dot{
+  width:7px;height:7px;border-radius:50%;flex:none;
+  background:var(--muted2);
+  transition:.2s;
+}
+.audio-status.ready .audio-dot{ background:var(--good); box-shadow:0 0 0 3px rgba(127,209,160,.18); }
+.audio-status.syncing .audio-dot{
+  background:#8cb4f0;
+  box-shadow:0 0 0 3px rgba(140,180,240,.2);
+  animation:syncPulse 1.6s ease-in-out infinite;
+}
+@keyframes syncPulse{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:.4;transform:scale(.7)}
+}
+.audio-status-text{
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+/* ============================================================
+   VIEWS
+   ============================================================ */
+.view{display:none;min-height:100vh;flex-direction:column}
+.view.active{display:flex}
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+.dash-head{
+  display:flex;align-items:center;gap:16px;
+  padding:18px 28px;
+  border-bottom:1px solid var(--line);
+  background:rgba(16,16,18,.9);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  position:sticky;top:0;z-index:20;
+}
+.dash-logo{
+  width:42px;height:42px;border-radius:12px;flex:none;
+  display:grid;place-items:center;font-size:1.2rem;
+  background:linear-gradient(135deg,#2a2a33,#1c1c22);
+  border:1px solid var(--line2);
+  color:var(--text);
+}
+.dash-brand{font-size:1.02rem;font-weight:600;letter-spacing:-.015em}
+.dash-brand-sub{font-size:.73rem;color:var(--muted);margin-top:1px}
+.dash-head-right{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+.dash-main{
+  max-width:1360px;width:100%;
+  margin:0 auto;padding:32px 28px 80px;
+  flex:1;
+}
+
+/* stats strip */
+.stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+  margin-bottom:36px;
+}
+.stat{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--r-lg);
+  padding:18px 20px;
+  position:relative;overflow:hidden;
+  transition:border-color .15s;
+}
+.stat::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--line2),transparent);
+  opacity:.5;
+}
+.stat-label{
+  font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);font-weight:700;margin-bottom:8px;
+}
+.stat-value{
+  font-size:2rem;font-weight:600;letter-spacing:-.03em;
+  line-height:1;font-variant-numeric:tabular-nums;
+}
+.stat-value small{font-size:.9rem;color:var(--muted);font-weight:500;margin-left:4px}
+.stat-sub{font-size:.74rem;color:var(--muted);margin-top:8px}
+
+/* toolbar */
+.toolbar{
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:20px;flex-wrap:wrap;
+}
+.search-wrap{
+  position:relative;flex:1;min-width:200px;max-width:360px;
+}
+.search-wrap svg{
+  position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  color:var(--muted2);pointer-events:none;
+}
+.search-wrap input{padding-left:36px}
+.toolbar-spacer{flex:1}
+.seg{
+  display:flex;gap:3px;background:var(--panel);border:1px solid var(--line);
+  padding:3px;border-radius:9px;
+}
+.seg button{
+  background:transparent;border:none;color:var(--muted);
+  padding:6px 12px;border-radius:6px;font-size:.76rem;font-weight:500;
+  transition:.14s;
+}
+.seg button:hover{color:var(--text)}
+.seg button.on{background:var(--panel3);color:var(--text);font-weight:600}
+
+/* library */
+.library{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:16px;
+}
+
+.pack{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--r-xl);
+  padding:22px;
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;
+  transition:border-color .18s,transform .18s,box-shadow .18s;
+  cursor:pointer;
+}
+.pack:hover{
+  border-color:var(--line2);
+  transform:translateY(-2px);
+  box-shadow:var(--shadow-sm);
+}
+.pack::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:80px;
+  background:radial-gradient(120% 100% at 50% 0%,rgba(255,255,255,.05),transparent 70%);
+  pointer-events:none;
+}
+.pack-top{
+  display:flex;align-items:flex-start;gap:14px;
+  margin-bottom:16px;position:relative;
+}
+.pack-glyph{
+  width:60px;height:60px;flex:none;
+  border-radius:16px;
+  display:grid;place-items:center;
+  font-family:Georgia,serif;font-size:1.7rem;
+  background:linear-gradient(135deg,#2a2a33,#1c1c22);
+  border:1px solid var(--line2);
+  color:var(--text);
+  letter-spacing:-.03em;
+}
+.pack-info{min-width:0;flex:1}
+.pack-title{
+  font-size:1.05rem;font-weight:600;letter-spacing:-.015em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  margin-bottom:3px;
+}
+.pack-desc{
+  font-size:.78rem;color:var(--muted);line-height:1.5;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden;min-height:2.3em;
+}
+.pack-menu{
+  background:transparent;border:none;color:var(--muted2);
+  padding:6px;border-radius:7px;flex:none;
+  transition:.14s;
+}
+.pack-menu:hover{background:var(--panel2);color:var(--text)}
+
+.pack-meta{
+  display:flex;gap:14px;flex-wrap:wrap;
+  font-size:.72rem;color:var(--muted);
+  margin-bottom:14px;
+  position:relative;
+}
+.pack-meta span{
+  display:inline-flex;align-items:center;gap:5px;
+  font-variant-numeric:tabular-nums;
+}
+.pack-meta b{color:var(--text);font-weight:600}
+
+.pack-progress{
+  margin-bottom:14px;position:relative;
+}
+.pack-progress-head{
+  display:flex;justify-content:space-between;
+  font-size:.72rem;color:var(--muted);margin-bottom:6px;
+}
+.pack-progress-head b{color:var(--text);font-weight:600}
+.bar{
+  height:5px;background:var(--track);border-radius:99px;overflow:hidden;
+}
+.bar > i{
+  display:block;height:100%;border-radius:99px;
+  background:linear-gradient(90deg,#9a9aa8,#ececef);
+  transition:width .35s ease;
+}
+
+.pack-foot{
+  display:flex;gap:8px;align-items:center;
+  margin-top:auto;position:relative;
+}
+.pack-foot .spacer{flex:1}
+
+/* empty library */
+.lib-empty{
+  grid-column:1/-1;
+  border:1px dashed var(--line2);
+  border-radius:var(--r-xl);
+  padding:70px 30px;
+  text-align:center;
+  background:var(--panel);
+}
+.lib-empty .glyph{
+  width:64px;height:64px;margin:0 auto 20px;
+  border-radius:18px;
+  display:grid;place-items:center;
+  background:var(--panel2);border:1px solid var(--line);
+  font-size:1.6rem;color:var(--muted);
+}
+.lib-empty h3{
+  font-family:Georgia,serif;font-size:1.4rem;font-weight:400;
+  margin:0 0 8px;letter-spacing:-.015em;
+}
+.lib-empty p{
+  color:var(--muted);font-size:.85rem;max-width:440px;
+  margin:0 auto 22px;line-height:1.65;
+}
+.lib-empty .cta-row{
+  display:flex;gap:9px;justify-content:center;flex-wrap:wrap;
+}
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+.modal{
+  position:fixed;inset:0;z-index:200;
+  display:none;align-items:center;justify-content:center;
+  padding:24px;
+}
+.modal.on{display:flex}
+.modal-bg{
+  position:absolute;inset:0;
+  background:rgba(6,6,8,.72);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  animation:fadeIn .18s ease-out;
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-panel{
+  position:relative;
+  background:var(--bg2);
+  border:1px solid var(--line2);
+  border-radius:var(--r-xl);
+  box-shadow:var(--shadow-lg);
+  width:100%;max-width:600px;
+  max-height:calc(100vh - 48px);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  animation:slideUp .22s cubic-bezier(.2,.7,.2,1);
+}
+@keyframes slideUp{
+  from{opacity:0;transform:translateY(12px) scale(.98)}
+  to  {opacity:1;transform:translateY(0) scale(1)}
+}
+.modal-head{
+  display:flex;align-items:center;gap:12px;
+  padding:18px 22px;
+  border-bottom:1px solid var(--line);
+}
+.modal-head h2{
+  font-family:Georgia,serif;font-size:1.2rem;font-weight:400;
+  margin:0;letter-spacing:-.015em;
+}
+.modal-head .close{
+  margin-left:auto;
+  background:transparent;border:none;color:var(--muted);
+  width:32px;height:32px;border-radius:8px;
+  display:grid;place-items:center;font-size:1.1rem;
+  transition:.14s;
+}
+.modal-head .close:hover{background:var(--panel2);color:var(--text)}
+.modal-body{
+  padding:22px;overflow-y:auto;flex:1;
+}
+.modal-body::-webkit-scrollbar{width:8px}
+.modal-body::-webkit-scrollbar-thumb{background:#2a2a32;border-radius:9px}
+.modal-foot{
+  display:flex;gap:8px;align-items:center;
+  padding:16px 22px;
+  border-top:1px solid var(--line);
+  background:var(--panel);
+}
+.modal-foot .spacer{flex:1}
+
+/* drop zone */
+.drop{
+  border:1.5px dashed var(--line2);
+  border-radius:var(--r-lg);
+  padding:34px 20px;
+  text-align:center;
+  transition:.18s;
+  cursor:pointer;
+  position:relative;
+}
+.drop:hover,.drop.over{
+  border-color:var(--accent);
+  background:rgba(236,236,239,.03);
+}
+.drop svg{color:var(--muted);margin-bottom:12px}
+.drop strong{display:block;font-size:.92rem;margin-bottom:4px}
+.drop span{font-size:.78rem;color:var(--muted)}
+
+.or{
+  display:flex;align-items:center;gap:12px;
+  color:var(--muted2);font-size:.72rem;
+  margin:18px 0;letter-spacing:.1em;text-transform:uppercase;
+  font-weight:700;
+}
+.or::before,.or::after{
+  content:"";flex:1;height:1px;background:var(--line);
+}
+
+textarea.code{
+  width:100%;min-height:140px;resize:vertical;
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--r);color:var(--text);
+  padding:13px;font-size:.78rem;line-height:1.6;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  transition:border-color .15s;
+}
+textarea.code:focus{outline:none;border-color:var(--line2)}
+textarea.code::placeholder{color:var(--muted2)}
+
+.validation{
+  margin-top:16px;font-size:.8rem;
+  border-radius:var(--r);padding:12px 14px;
+  display:none;
+}
+.validation.on{display:block}
+.validation.ok{
+  background:rgba(127,209,160,.08);
+  border:1px solid rgba(127,209,160,.22);
+  color:var(--good);
+}
+.validation.err{
+  background:rgba(229,138,138,.07);
+  border:1px solid rgba(229,138,138,.22);
+  color:#f0b3b3;
+}
+.validation ul{
+  margin:6px 0 0;padding-left:18px;
+  font-size:.76rem;line-height:1.65;color:#e0a8a8;
+}
+.validation .pack-preview{
+  margin-top:10px;padding-top:10px;
+  border-top:1px solid rgba(127,209,160,.15);
+  color:var(--muted);font-size:.76rem;
+}
+
+/* ============================================================
+   PRACTICE VIEW (workbench layout)
+   ============================================================ */
+.p-head{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 22px;
+  border-bottom:1px solid var(--line);
+  background:rgba(16,16,18,.94);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  position:sticky;top:0;z-index:20;
+}
+.p-back{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--panel2);border:1px solid var(--line);
+  color:var(--text);
+  padding:8px 13px;border-radius:var(--r-sm);
+  font-size:.8rem;font-weight:500;transition:.15s;
+}
+.p-back:hover{background:var(--panel3);border-color:var(--line2)}
+.p-logo{
+  width:42px;height:42px;border-radius:11px;flex:none;
+  display:grid;place-items:center;
+  font-family:Georgia,serif;font-size:1.35rem;
+  background:var(--panel2);border:1px solid var(--line);
+  color:var(--text);
+}
+.p-title{font-size:.98rem;font-weight:600;letter-spacing:-.01em}
+.p-sub{font-size:.73rem;color:var(--muted);margin-top:1px}
+.p-sub b{color:var(--text);font-weight:600}
+.p-head-right{margin-left:auto;display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.p-divider{width:1px;height:26px;background:var(--line);margin:0 4px}
+
+.p-grid{
+  display:grid;
+  grid-template-columns:236px minmax(0,1fr) 312px;
+  gap:1px;background:var(--line);
+  flex:1;min-height:0;
+}
+.p-col{background:var(--bg);padding:22px;min-width:0;overflow-y:auto}
+.p-col::-webkit-scrollbar{width:8px}
+.p-col::-webkit-scrollbar-thumb{background:#2a2a32;border-radius:9px}
+
+/* progress ring */
+.prog-wrap{
+  display:flex;flex-direction:column;align-items:center;
+  padding-bottom:20px;margin-bottom:20px;
+  border-bottom:1px solid var(--line);
+}
+.ring{
+  position:relative;width:96px;height:96px;border-radius:50%;
+  background:conic-gradient(
+    var(--accent) 0 var(--pct,0%),
+    var(--track) var(--pct,0%) 100%
+  );
+  display:grid;place-items:center;flex:none;
+  transition:background .4s;
+}
+.ring::after{
+  content:"";position:absolute;inset:8px;border-radius:50%;
+  background:var(--bg);
+}
+.ring span{
+  position:relative;z-index:1;
+  font-size:1rem;font-weight:700;letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums;
+}
+.prog-meta{
+  text-align:center;margin-top:14px;
+  font-size:.74rem;color:var(--muted);line-height:1.6;
+}
+.prog-meta b{color:var(--text);font-weight:600}
+
+.p-nav{display:flex;flex-direction:column;gap:2px}
+.p-nav-item{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  background:transparent;border:1px solid transparent;color:var(--text);
+  padding:9px 10px;border-radius:9px;font-size:.83rem;
+  transition:background .14s,border-color .14s;
+}
+.p-nav-item:hover{background:var(--panel2)}
+.p-nav-item.active{background:var(--panel2);border-color:var(--line2)}
+.p-nav-item .num{
+  font-size:.7rem;color:var(--muted);width:15px;flex:none;
+  font-variant-numeric:tabular-nums;font-weight:600;text-align:center;
+}
+.p-nav-item.active .num{color:var(--accent)}
+.p-nav-item.done .num{color:var(--good)}
+.p-nav-item .lbl{
+  flex:1;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.p-nav-item .meta{
+  font-size:.67rem;color:var(--muted);flex:none;
+  font-variant-numeric:tabular-nums;
+}
+.p-nav-item.done .meta{color:var(--good)}
+.p-nav-item .nav-audio{
+  color:var(--good);flex:none;opacity:.85;
+}
+
+/* center */
+.practice-head{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  gap:14px;margin-bottom:6px;
+}
+.practice-head h2{
+  font-family:Georgia,serif;font-size:1.7rem;font-weight:400;
+  margin:3px 0 0;letter-spacing:-.01em;
+}
+.practice-desc{
+  color:var(--muted);font-size:.84rem;
+  margin:8px 0 0;max-width:620px;line-height:1.6;
+}
+.target-stage{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--r-xl);
+  padding:36px 24px 32px;
+  text-align:center;margin:20px 0;
+  position:relative;overflow:hidden;
+}
+.target-stage::before{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(120% 90% at 50% -20%,rgba(255,255,255,.045),transparent 60%);
+  pointer-events:none;
+}
+.target-word{
+  font-family:Georgia,serif;
+  font-size:clamp(2.6rem,7vw,4rem);
+  line-height:1.05;letter-spacing:-.025em;position:relative;
+  overflow-wrap:anywhere;
+}
+.target-word.long{
+  font-size:clamp(1.6rem,4.2vw,2.4rem);line-height:1.25;
+}
+.target-word.xlong{
+  font-family:Inter,system-ui,sans-serif;
+  font-size:clamp(1.05rem,2.6vw,1.5rem);
+  line-height:1.45;letter-spacing:-.01em;font-weight:500;
+}
+.target-ipa{
+  color:var(--muted);font-size:.85rem;margin-top:8px;
+  font-family:ui-monospace,Menlo,Consolas,monospace;
+  position:relative;min-height:1.2em;
+}
+.transport{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  margin-bottom:14px;
+}
+.transport-spacer{flex:1}
+.modes{display:flex;gap:5px;flex-wrap:wrap}
+.wave-main{height:96px;margin-bottom:10px}
+
+/* bookmarks */
+.bookmark-bar{
+  display:flex;gap:6px;flex-wrap:wrap;align-items:center;
+  margin:0 0 16px;
+}
+.bookmark-bar:empty{display:none}
+.bm-label{
+  font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted2);font-weight:700;margin-right:2px;
+}
+.bm{
+  display:inline-flex;align-items:center;gap:7px;
+  background:var(--panel2);border:1px solid var(--line);color:var(--text);
+  padding:4px 5px 4px 10px;border-radius:999px;
+  font-size:.72rem;font-variant-numeric:tabular-nums;
+  transition:.14s;
+}
+.bm:hover{border-color:var(--line2);background:var(--panel3)}
+.bm svg{color:var(--warn);flex:none}
+.bm .bm-x{
+  display:grid;place-items:center;width:17px;height:17px;
+  border-radius:50%;color:var(--muted2);font-size:.72rem;line-height:1;
+  transition:.14s;
+}
+.bm .bm-x:hover{background:rgba(229,138,138,.16);color:var(--danger)}
+
+.record-panel{
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--r);padding:14px 16px;margin-bottom:18px;
+}
+.record-top{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  margin-bottom:10px;
+}
+.record-time{
+  font-family:ui-monospace,Menlo,Consolas,monospace;
+  font-size:1.15rem;font-variant-numeric:tabular-nums;letter-spacing:-.02em;
+}
+.record-status{
+  font-size:.76rem;color:var(--muted);margin-left:auto;
+}
+.record-status.saved{color:var(--good)}
+.wave-rec{height:52px}
+
+.btn.rec{
+  background:#3b1c1c;border-color:#7c3636;color:#ffb8b8;font-weight:600;
+}
+.btn.rec:hover:not(:disabled){background:#4c2323;border-color:#a04a4a}
+.btn.rec.recording{
+  background:#c84646;border-color:#e06a6a;color:#fff;
+  animation:pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(200,70,70,.55)}
+  50%    {box-shadow:0 0 0 7px rgba(200,70,70,0)}
+}
+
+.items-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin:22px 0 10px;
+}
+.chip-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(126px,1fr));
+  gap:8px;
+}
+.chip{
+  background:var(--panel2);border:1px solid var(--line);
+  border-radius:10px;padding:11px 12px;text-align:left;
+  color:var(--text);transition:.14s;position:relative;
+}
+.chip:hover{border-color:var(--line2);background:var(--panel3)}
+.chip.active{border-color:var(--accent);background:var(--panel3)}
+.chip.active::after{
+  content:"";position:absolute;top:8px;right:8px;
+  width:6px;height:6px;border-radius:50%;background:var(--accent);
+}
+.chip.done .chip-word{color:var(--good)}
+.chip-word{
+  font-family:Georgia,serif;font-size:1rem;
+  line-height:1.2;margin-bottom:3px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.chip-meta{
+  font-size:.68rem;color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+.chip.done .chip-meta{color:var(--good)}
+
+/* auto-sync playing indicator */
+.chip.playing{
+  border-color:var(--good);
+  background:rgba(127,209,160,.07);
+}
+.chip.playing::after{
+  background:var(--good);
+}
+.chip.playing .chip-word::after{
+  content:"";
+  display:inline-block;
+  width:6px;height:6px;border-radius:50%;
+  background:var(--good);
+  margin-left:7px;
+  vertical-align:middle;
+  animation:chipPulse 1.3s ease-in-out infinite;
+}
+@keyframes chipPulse{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%    {opacity:.35;transform:scale(.65)}
+}
+
+.foot-row{
+  display:flex;align-items:center;gap:10px;
+  margin-top:22px;padding-top:18px;
+  border-top:1px solid var(--line);
+}
+.foot-row .spacer{flex:1}
+.foot-info{
+  font-size:.75rem;color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+
+/* right */
+.tabs{
+  display:flex;gap:3px;background:var(--panel2);
+  padding:3px;border-radius:10px;margin-bottom:16px;
+}
+.tabs button{
+  flex:1;background:transparent;border:none;color:var(--muted);
+  padding:8px;border-radius:8px;font-size:.78rem;font-weight:500;
+  transition:.14s;
+}
+.tabs button:hover{color:var(--text)}
+.tabs button.on{background:var(--bg);color:var(--text);font-weight:600}
+.tab-panel{display:none}
+.tab-panel.on{display:block}
+
+.side-head{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;margin-bottom:10px;
+}
+.side-hint{
+  font-size:.74rem;color:var(--muted2);line-height:1.6;
+  margin:0 0 10px;
+}
+.side-hint code{
+  background:var(--panel2);padding:1px 5px;border-radius:4px;
+  font-size:.72rem;font-family:ui-monospace,Menlo,Consolas,monospace;
+  color:var(--muted);
+}
+
+.file-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--panel2);border:1px solid var(--line);color:var(--text);
+  padding:7px 12px;border-radius:7px;font-size:.78rem;font-weight:500;
+  cursor:pointer;transition:.14s;white-space:nowrap;
+}
+.file-btn:hover{background:var(--panel3);border-color:var(--line2)}
+.file-btn.sm{padding:5px 10px;font-size:.73rem}
+input[type=file]{display:none}
+
+.notes-area{
+  width:100%;min-height:220px;resize:vertical;
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:11px;color:var(--text);
+  padding:13px;font-size:.82rem;line-height:1.65;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  transition:border-color .15s;
+}
+.notes-area:focus{outline:none;border-color:var(--line2)}
+.notes-area::placeholder{color:var(--muted2)}
+
+.notes-foot{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:8px;margin-top:8px;font-size:.7rem;color:var(--muted2);
+}
+.notes-status{transition:color .15s}
+.notes-status.saved{color:var(--good)}
+
+.img-grid{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:8px;
+}
+.img-cell{
+  position:relative;border-radius:10px;overflow:hidden;
+  border:1px solid var(--line);background:var(--panel2);
+  aspect-ratio:4/3;
+}
+.img-cell img{
+  width:100%;height:100%;object-fit:cover;display:block;
+  cursor:zoom-in;transition:transform .2s;
+}
+.img-cell img:hover{transform:scale(1.04)}
+.img-cell .del{
+  position:absolute;top:5px;right:5px;
+  width:22px;height:22px;border-radius:50%;
+  background:rgba(0,0,0,.7);border:none;
+  color:#fff;font-size:.8rem;line-height:1;
+  display:grid;place-items:center;
+  opacity:0;transition:opacity .15s;
+}
+.img-cell:hover .del{opacity:1}
+.img-cell .del:hover{background:rgba(200,60,60,.9)}
+.img-empty{
+  grid-column:1/-1;
+  border:1px dashed var(--line2);border-radius:10px;
+  padding:24px 14px;text-align:center;
+  color:var(--muted2);font-size:.76rem;
+}
+
+.guide-item{
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:11px;padding:12px 13px;margin-bottom:8px;
+}
+.guide-item strong{
+  display:block;font-size:.82rem;margin-bottom:3px;color:var(--text);
+}
+.guide-item span{
+  font-size:.77rem;color:var(--muted);line-height:1.55;display:block;
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+.toast{
+  position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+  background:#ececef;color:#141416;
+  padding:10px 18px;border-radius:9px;
+  font-size:.82rem;font-weight:500;
+  box-shadow:var(--shadow);z-index:400;
+  animation:toastIn .22s ease-out;
+  max-width:calc(100vw - 32px);text-align:center;
+}
+@keyframes toastIn{
+  from{opacity:0;transform:translateX(-50%) translateY(8px)}
+  to  {opacity:1;transform:translateX(-50%) translateY(0)}
+}
+
+/* ============================================================
+   LIGHTBOX
+   ============================================================ */
+.lightbox{
+  position:fixed;inset:0;background:rgba(0,0,0,.92);
+  display:none;align-items:center;justify-content:center;
+  z-index:300;padding:30px;cursor:zoom-out;
+}
+.lightbox.on{display:flex}
+.lightbox img{
+  max-width:100%;max-height:100%;border-radius:12px;
+  box-shadow:var(--shadow-lg);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media(max-width:1180px){
+  .p-grid{grid-template-columns:200px minmax(0,1fr)}
+  .p-col.side{grid-column:1/-1;border-top:1px solid var(--line)}
+  .img-grid{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:900px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:760px){
+  .dash-head,.p-head{padding:12px 16px;flex-wrap:wrap}
+  .dash-head-right,.p-head-right{margin-left:0;width:100%;justify-content:flex-start;flex-wrap:wrap}
+  .dash-main{padding:22px 16px 60px}
+  .library{grid-template-columns:1fr}
+  .p-grid{grid-template-columns:1fr}
+  .p-col{padding:16px}
+  .p-divider{display:none}
+  .img-grid{grid-template-columns:repeat(2,1fr)}
+  .stats{grid-template-columns:1fr 1fr}
+  .stat-value{font-size:1.5rem}
+}
+@media(max-width:520px){
+  .stats{grid-template-columns:1fr}
+  .modal{padding:12px}
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     DASHBOARD VIEW
+     ============================================================ -->
+<div class="view active" id="viewDashboard">
+  <header class="dash-head">
+    <div class="dash-logo">◈</div>
+    <div>
+      <div class="dash-brand">Pronunciation Dashboard</div>
+      <div class="dash-brand-sub" id="dashSub">Loading…</div>
+    </div>
+    <div class="dash-head-right">
+      <button class="btn" id="templateBtn" title="Download a blank JSON template">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 2v8M5 7l3 3 3-3M2.5 13.5h11"/>
+        </svg>
+        Template
+      </button>
+      <button class="btn" id="exportLibBtn" title="Back up all packs">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 2.5h7l3 3v8a1 1 0 01-1 1H3a1 1 0 01-1-1v-10a1 1 0 011-1z"/>
+          <path d="M5.5 2.5v4h5v-4M5.5 13.5v-4h5v4"/>
+        </svg>
+        Export
+      </button>
+      <div class="p-divider"></div>
+      <button class="btn primary lg" id="uploadBtn">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 11V2M4.5 5.5L8 2l3.5 3.5M2.5 13.5h11"/>
+        </svg>
+        Upload JSON
+      </button>
+    </div>
+  </header>
+
+  <main class="dash-main">
+
+    <!-- stats -->
+    <section class="stats" id="statsStrip"></section>
+
+    <!-- toolbar -->
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+          <circle cx="7" cy="7" r="4.5"/>
+          <path d="M10.5 10.5L14 14"/>
+        </svg>
+        <input class="input" id="searchInput" type="text" placeholder="Search packs…">
+      </div>
+      <div class="toolbar-spacer"></div>
+      <div class="seg" id="sortSeg">
+        <button data-sort="recent" class="on">Recent</button>
+        <button data-sort="name">Name</button>
+        <button data-sort="progress">Progress</button>
+      </div>
+    </div>
+
+    <!-- library -->
+    <section class="library" id="libraryGrid"></section>
+
+  </main>
+</div>
+
+
+<!-- ============================================================
+     PRACTICE VIEW (workbench)
+     ============================================================ -->
+<div class="view" id="viewPractice">
+  <header class="p-head">
+    <button class="p-back" id="backBtn">
+      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M7.5 2.5L4 6l3.5 3.5"/>
+      </svg>
+      Library
+    </button>
+    <div class="p-logo" id="pLogo">/—/</div>
+    <div style="min-width:0">
+      <div class="p-title" id="pTitle">—</div>
+      <div class="p-sub" id="pSub">—</div>
+    </div>
+    <div class="p-head-right">
+      <label class="btn" for="packAudioInput" title="Load one audio file used across the whole pack">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1.5" y="3.5" width="13" height="9" rx="1.5"/>
+          <path d="M4 7h2.5M4 9.5h4.5M9 7h3"/>
+        </svg>
+        Pack audio
+      </label>
+      <input id="packAudioInput" type="file" accept="audio/*">
+      <label class="btn" for="exerciseAudioInput" title="Load audio for the current exercise — enables auto-sync with SRT timecodes">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 6.5v3h2.5L8 12V4L4.5 6.5H2zM10.5 6a2.5 2.5 0 010 4"/>
+        </svg>
+        Exercise audio
+      </label>
+      <input id="exerciseAudioInput" type="file" accept="audio/*">
+      <label class="btn" for="lessonAudioInput" title="Load audio for the current item only">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 11V2M4.5 5.5L8 2l3.5 3.5M2.5 13.5h11"/>
+        </svg>
+        Item audio
+      </label>
+      <input id="lessonAudioInput" type="file" accept="audio/*">
+      <label class="btn" for="srtInput" title="Import an .srt file — the whole file becomes one exercise with all lines as items">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1.5" y="3.5" width="13" height="9" rx="1.5"/>
+          <path d="M4 7h3M4 9.5h6M9.5 7H12"/>
+        </svg>
+        Upload SRT
+      </label>
+      <input id="srtInput" type="file" accept=".srt,text/plain">
+      <button class="btn" id="exportPackBtn" title="Download this pack as JSON">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 2v8M5 7l3 3 3-3M2.5 13.5h11"/>
+        </svg>
+        Export
+      </button>
+      <div class="p-divider"></div>
+      <button class="btn ghost" id="resetPackBtn">Reset</button>
+    </div>
+  </header>
+
+  <div class="p-grid">
+    <!-- LEFT -->
+    <aside class="p-col">
+      <div class="prog-wrap">
+        <div class="ring" id="ring" style="--pct:0%">
+          <span id="ringPct">0%</span>
+        </div>
+        <div class="prog-meta" id="progMeta"><b>0</b> of <b>0</b> items complete</div>
+      </div>
+      <div class="tag" style="margin-bottom:10px">Exercises</div>
+      <nav class="p-nav" id="pNav"></nav>
+    </aside>
+
+    <!-- CENTER -->
+    <main class="p-col">
+      <div class="practice-head">
+        <div style="min-width:0">
+          <div class="tag" id="exTag">Exercise</div>
+          <h2 id="exTitle">—</h2>
+        </div>
+        <span class="badge" id="exCount">0 / 0</span>
+      </div>
+      <p class="practice-desc" id="exDesc"></p>
+
+      <div class="target-stage">
+        <div class="target-word" id="targetWord">—</div>
+        <div class="target-ipa" id="targetIpa"></div>
+      </div>
+
+      <div class="transport">
+        <button class="btn" id="back5Btn" title="Rewind 5 seconds">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 6H3"/>
+            <path d="M5.5 3.5L3 6l2.5 2.5"/>
+          </svg>
+          -5s
+        </button>
+
+        <button class="btn primary" id="playPauseBtn" title="Play / Pause (Space)">
+          <svg id="ppIcon" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+            <path d="M2.5 1.2v9.6l8-4.8z"/>
+          </svg>
+          <span id="ppLabel">Play</span>
+        </button>
+
+        <button class="btn" id="stopBtn">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor"><rect x="2" y="2" width="8" height="8" rx="1"/></svg>
+          Stop
+        </button>
+        <button class="btn" id="fwd5Btn" title="Advance 5 seconds">
+          +5s
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h6"/>
+            <path d="M6.5 3.5L9 6l-2.5 2.5"/>
+          </svg>
+        </button>
+        <button class="btn" id="bookmarkBtn" title="Bookmark the current playback position">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
+            <path d="M3 1.5h6a.5.5 0 01.5.5v8.6L6 8.3l-3.5 2.3V2a.5.5 0 01.5-.5z"/>
+          </svg>
+          Bookmark
+        </button>
+        <button class="btn" id="speakBtn" title="Use your browser's built-in voice">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6v4h2l3 3V3L5 6H3zM11 5.5a3 3 0 010 5M12.5 4a5 5 0 010 8"/>
+          </svg>
+          Voice
+        </button>
+        <div class="transport-spacer"></div>
+        <div class="modes">
+          <button class="pill" data-mode="chorus">Chorus</button>
+          <button class="pill" data-mode="shadow">Shadow</button>
+          <button class="pill" data-mode="independent">Independent</button>
+        </div>
+      </div>
+
+      <div class="wave wave-main"><canvas id="waveform"></canvas></div>
+      <div class="bookmark-bar" id="bookmarkBar"></div>
+
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+        <span class="audio-status" id="audioStatus">
+          <span class="audio-dot"></span>
+          <span class="audio-status-text" id="audioStatusText">No reference audio</span>
+        </span>
+        <div style="flex:1"></div>
+        <span style="font-size:.74rem;color:var(--muted)">Speed</span>
+        <div class="modes">
+          <button class="pill sm" data-speed="0.5">0.5×</button>
+          <button class="pill sm" data-speed="0.75">0.75×</button>
+          <button class="pill sm" data-speed="1">1×</button>
+          <button class="pill sm" data-speed="1.25">1.25×</button>
+        </div>
+      </div>
+
+      <div class="record-panel">
+        <div class="record-top">
+          <button class="btn rec" id="recBtn">
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor"><circle cx="6" cy="6" r="5"/></svg>
+            Record
+          </button>
+          <button class="btn" id="playRecBtn">Playback</button>
+          <button class="btn ghost" id="clearRecBtn">Clear</button>
+          <div class="record-time" id="recTime">00:00</div>
+          <div class="record-status" id="recStatus">No recording yet</div>
+        </div>
+        <div class="wave wave-rec"><canvas id="recWaveform"></canvas></div>
+      </div>
+
+      <div class="items-head">
+        <div class="tag" id="itemsTag">Items</div>
+        <span class="badge" id="itemsCount">0 / 0 done</span>
+      </div>
+      <div class="chip-grid" id="chipGrid"></div>
+
+      <div class="foot-row">
+        <button class="btn" id="prevBtn">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7.5 2.5L4 6l3.5 3.5"/>
+          </svg>
+          Previous
+        </button>
+        <button class="btn" id="repeatBtn">
+          <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 5a5 5 0 019-1.5M12 9a5 5 0 01-9 1.5"/>
+            <path d="M11 1.5v2.5h-2.5M3 12.5V10h2.5"/>
+          </svg>
+          Repeat
+        </button>
+        <div class="spacer"></div>
+        <div class="foot-info" id="footInfo">—</div>
+        <div class="spacer"></div>
+        <button class="btn primary" id="nextBtn">
+          Next
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4.5 2.5L8 6l-3.5 3.5"/>
+          </svg>
+        </button>
+      </div>
+    </main>
+
+    <!-- RIGHT -->
+    <aside class="p-col side">
+      <div class="tabs" id="tabs">
+        <button data-tab="notes" class="on">Notes</button>
+        <button data-tab="images">Images</button>
+        <button data-tab="guide">Info</button>
+      </div>
+
+      <div class="tab-panel on" id="panel-notes">
+        <div class="side-head">
+          <div class="tag">Lesson notes</div>
+          <label class="file-btn sm" for="notesFile">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 11V2M4.5 5.5L8 2l3.5 3.5M2.5 13.5h11"/></svg>
+            Upload
+          </label>
+          <input id="notesFile" type="file" accept=".txt,.md,.markdown,.text,text/plain">
+        </div>
+        <p class="side-hint">Type notes, or upload a <code>.txt</code> / <code>.md</code> file. Notes are saved automatically per pack.</p>
+        <textarea class="notes-area" id="notesArea" placeholder="Lesson notes go here…"></textarea>
+        <div class="notes-foot">
+          <span class="notes-status" id="notesStatus">Auto-saved</span>
+          <button class="btn ghost sm" id="clearNotesBtn" style="font-size:.7rem;padding:3px 8px">Clear</button>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="panel-images">
+        <div class="side-head">
+          <div class="tag">Visual aids</div>
+          <label class="file-btn sm" for="imageInput">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg>
+            Add
+          </label>
+          <input id="imageInput" type="file" accept="image/*" multiple>
+        </div>
+        <p class="side-hint">Diagrams, screenshots, spectrograms. Images are resized before saving.</p>
+        <div class="img-grid" id="imgGrid"></div>
+      </div>
+
+      <div class="tab-panel" id="panel-guide">
+        <div class="side-head">
+          <div class="tag">Pack info</div>
+        </div>
+        <div id="packInfoBox"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     UPLOAD MODAL
+     ============================================================ -->
+<div class="modal" id="uploadModal">
+  <div class="modal-bg" data-close></div>
+  <div class="modal-panel">
+    <header class="modal-head">
+      <h2>Import a lesson pack</h2>
+      <button class="close" data-close>✕</button>
+    </header>
+    <div class="modal-body">
+      <div class="drop" id="dropZone">
+        <input type="file" id="jsonInput" accept=".json,application/json">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z"/>
+          <path d="M14 3v6h6M12 12v6M9 15l3-3 3 3"/>
+        </svg>
+        <strong>Drop a JSON file here</strong>
+        <span>or click to browse</span>
+      </div>
+
+      <div class="or">or paste JSON</div>
+
+      <textarea class="code" id="jsonPaste" placeholder='{
+  "id": "my-lesson",
+  "title": "My Lesson",
+  "target": "/x/",
+  "defaultRepetitions": 3,
+  "exercises": [
+    {
+      "id": "ex1",
+      "type": "words",
+      "title": "Example",
+      "description": "…",
+      "items": [
+        { "id": "a", "text": "example", "ipa": "/ɪɡˈzæmpəl/" }
+      ]
+    }
+  ]
+}'></textarea>
+
+      <div class="validation" id="validationMsg"></div>
+    </div>
+    <footer class="modal-foot">
+      <button class="btn ghost" data-close>Cancel</button>
+      <div class="spacer"></div>
+      <button class="btn primary" id="confirmUpload" disabled>Import pack</button>
+    </footer>
+  </div>
+</div>
+
+
+<!-- lightbox -->
+<div class="lightbox" id="lightbox">
+  <img id="lightboxImg" alt="">
+</div>
+
+<script>
+/* ============================================================================
+   PERSISTENCE
+   ============================================================================ */
+const DB_KEY = "pronunciation-dashboard-v1";
+
+let DB = {
+  packs: {},        // id -> lesson object
+  progress: {},     // id -> progress object
+  meta: { createdAt: Date.now() }
+};
+
+function loadDB(){
+  try{
+    const raw = localStorage.getItem(DB_KEY);
+    if(raw){
+      const saved = JSON.parse(raw);
+      DB = {
+        packs:    saved.packs    || {},
+        progress: saved.progress || {},
+        meta:     saved.meta     || { createdAt: Date.now() }
+      };
+    }
+  }catch(e){ console.warn("Could not load database", e); }
+}
+function saveDB(){
+  try{
+    localStorage.setItem(DB_KEY, JSON.stringify(DB));
+  }catch(e){
+    console.warn("Could not save database", e);
+    toast("Storage full — some data may not be saved.");
+  }
+}
+
+/* ============================================================================
+   DEFAULT PROGRESS SHAPE
+   ============================================================================ */
+function freshProgress(){
+  return {
+    exercise: 0,
+    item: 0,
+    mode: "chorus",
+    speed: 1,
+    repetitions: {},
+    completed: {},
+    recordings: {},     // session-only (blob URLs)
+    customAudio: {},    // item-level overrides ("ex::item" -> data URL)
+    exerciseAudio: {},  // exercise-level audio  (exId -> data URL)
+    bookmarks: {},      // "ex::item" -> [seconds]
+    packAudio: null,    // data URL for the whole pack (small files only)
+    notes: "",
+    images: [],
+    lastVisit: Date.now(),
+    startedAt: Date.now()
+  };
+}
+function getProgress(packId){
+  if(!DB.progress[packId]){
+    DB.progress[packId] = freshProgress();
+  }
+  const p = DB.progress[packId];
+  if(!Array.isArray(p.images)) p.images = [];
+  if(typeof p.notes !== "string") p.notes = "";
+  if(!p.repetitions) p.repetitions = {};
+  if(!p.completed) p.completed = {};
+  if(!p.recordings) p.recordings = {};
+  if(!p.customAudio) p.customAudio = {};
+  if(!p.exerciseAudio || typeof p.exerciseAudio !== "object") p.exerciseAudio = {};
+  if(!p.bookmarks || typeof p.bookmarks !== "object") p.bookmarks = {};
+  if(typeof p.packAudio !== "string") p.packAudio = null;
+  return p;
+}
+
+/* Large audio that can't be persisted lives here for the session only */
+const sessionAudio = {};           // packId -> blob URL
+const sessionExerciseAudio = {};   // packId + "::" + exId -> blob URL
+
+/* ============================================================================
+   UTILITIES
+   ============================================================================ */
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+function toast(msg){
+  const t = document.createElement("div");
+  t.className = "toast"; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2400);
+}
+function formatTime(sec){
+  sec = Math.max(0, Math.floor(sec));
+  return String(Math.floor(sec/60)).padStart(2,"0") + ":" + String(sec%60).padStart(2,"0");
+}
+function plural(n, s){ return n + " " + s + (n === 1 ? "" : "s"); }
+function fmtDate(ts){
+  if(!ts) return "—";
+  const diff = Date.now() - ts;
+  const min = 60*1000, hour = 60*min, day = 24*hour;
+  if(diff < min) return "just now";
+  if(diff < hour) return Math.floor(diff/min) + "m ago";
+  if(diff < day)  return Math.floor(diff/hour) + "h ago";
+  if(diff < 7*day) return Math.floor(diff/day) + "d ago";
+  return new Date(ts).toLocaleDateString();
+}
+function slugify(s){
+  return String(s).toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
+
+/* ============================================================================
+   PACK VALIDATION
+   ============================================================================ */
+function validatePack(raw){
+  const errors = [];
+
+  if(!raw || typeof raw !== "object" || Array.isArray(raw)){
+    return { errors: ["The file must contain a JSON object."] };
+  }
+
+  const id = String(raw.id || "").trim();
+  if(!id) errors.push("Missing required field: \"id\"");
+
+  const title = String(raw.title || "").trim() || id || "Untitled Pack";
+  const target = String(raw.target || "").trim() || "/—/";
+  const description = String(raw.description || "").trim();
+  const defaultRepetitions = Number.isFinite(+raw.defaultRepetitions)
+    ? Math.max(1, Math.floor(+raw.defaultRepetitions))
+    : 3;
+
+  if(!Array.isArray(raw.exercises)){
+    errors.push("Missing or invalid field: \"exercises\" (must be an array)");
+    return { errors };
+  }
+  if(raw.exercises.length === 0){
+    errors.push("\"exercises\" array is empty — add at least one exercise.");
+  }
+
+  const exercises = [];
+  raw.exercises.forEach((ex, i) => {
+    const n = i + 1;
+    if(!ex || typeof ex !== "object"){
+      errors.push(`Exercise ${n}: must be an object.`);
+      return;
+    }
+    const exId = String(ex.id || "").trim();
+    if(!exId) errors.push(`Exercise ${n}: missing "id"`);
+    const exTitle = String(ex.title || "").trim() || exId || `Exercise ${n}`;
+    const exType  = String(ex.type  || "").trim() || "exercise";
+    const exDesc  = String(ex.description || "").trim();
+
+    if(!Array.isArray(ex.items)){
+      errors.push(`Exercise "${exTitle}": missing or invalid "items" array`);
+      return;
+    }
+    if(ex.items.length === 0){
+      errors.push(`Exercise "${exTitle}": "items" array is empty`);
+    }
+
+    const items = [];
+    ex.items.forEach((it, j) => {
+      const m = j + 1;
+      if(!it || typeof it !== "object"){
+        errors.push(`Exercise "${exTitle}" item ${m}: must be an object.`);
+        return;
+      }
+      const itId = String(it.id || "").trim();
+      if(!itId) errors.push(`Exercise "${exTitle}" item ${m}: missing "id"`);
+      const itText = String(it.text || "").trim();
+      if(!itText) errors.push(`Exercise "${exTitle}" item ${m}: missing "text"`);
+      items.push({
+        id:    itId || `item-${m}`,
+        text:  itText || "—",
+        ipa:   String(it.ipa || "").trim(),
+        audio: typeof it.audio === "string" && it.audio ? it.audio : null,
+        start: (it.start != null && Number.isFinite(+it.start)) ? +it.start : null,
+        end:   (it.end   != null && Number.isFinite(+it.end))   ? +it.end   : null
+      });
+    });
+
+    exercises.push({
+      id:          exId || `exercise-${n}`,
+      type:        exType,
+      title:       exTitle,
+      description: exDesc,
+      items
+    });
+  });
+
+  if(errors.length) return { errors };
+
+  return {
+    pack: {
+      id, title, target, description,
+      defaultRepetitions,
+      exercises,
+      importedAt: Date.now()
+    }
+  };
+}
+
+/* ============================================================================
+   SRT PARSING
+   ============================================================================ */
+function srtTimeToSeconds(h, m, s, ms){
+  return (+h) * 3600 + (+m) * 60 + (+s) + (+String(ms).padEnd(3, "0")) / 1000;
+}
+
+function parseSRT(text){
+  const norm = String(text)
+    .replace(/^\uFEFF/, "")
+    .replace(/\r\n?/g, "\n")
+    .trim();
+  if(!norm) return [];
+
+  const timeRe = /(\d{1,3}):(\d{2}):(\d{2})[,.](\d{1,3})\s*-->\s*(\d{1,3}):(\d{2}):(\d{2})[,.](\d{1,3})/g;
+  const marks = [];
+  let m;
+  while((m = timeRe.exec(norm))){
+    marks.push({
+      index: m.index,
+      endOfTime: timeRe.lastIndex,
+      start: srtTimeToSeconds(m[1], m[2], m[3], m[4]),
+      end:   srtTimeToSeconds(m[5], m[6], m[7], m[8])
+    });
+  }
+
+  const cues = [];
+  marks.forEach((mk, i) => {
+    const nextIdx = (i + 1 < marks.length) ? marks[i + 1].index : norm.length;
+    let body = norm.slice(mk.endOfTime, nextIdx);
+
+    const nl = body.indexOf("\n");
+    body = nl === -1 ? "" : body.slice(nl + 1);
+
+    const lines = body.split("\n");
+    while(lines.length && lines[lines.length - 1].trim() === "") lines.pop();
+
+    if(lines.length && /^\d+$/.test(lines[lines.length - 1].trim())){
+      const before = lines.length > 1 ? lines[lines.length - 2].trim() : "";
+      if(before === "" || lines.length === 1) lines.pop();
+    }
+
+    const txt = lines
+      .map(l => l.trim())
+      .filter(l => l !== "")
+      .join(" ")
+      .replace(/<[^>]*>/g, "")
+      .replace(/\{[^}]*\}/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if(!txt) return;
+    cues.push({ start: mk.start, end: mk.end, text: txt });
+  });
+
+  return cues;
+}
+
+/* ---------------------------------------------------------------------------
+   SRT → ONE exercise per SRT file (one audio lesson).
+   Every subtitle cue becomes an *item* of that single exercise.
+   --------------------------------------------------------------------------- */
+function importSrtToPack(text, filename){
+  if(!currentPack || !currentProg){
+    toast("Open a pack first to import an SRT file.");
+    return;
+  }
+  const cues = parseSRT(text);
+  if(!cues.length){
+    toast("No subtitle cues found in that .srt file.");
+    return;
+  }
+
+  const base = String(filename || "").replace(/\.[^.]+$/, "").trim() || "Untitled SRT";
+
+  let exId = slugify(base) || "srt-lesson";
+  const used = new Set(currentPack.exercises.map(e => e.id));
+  let n = 2;
+  while(used.has(exId)){
+    exId = (slugify(base) || "srt-lesson") + "-" + n;
+    n++;
+  }
+
+  const exercise = {
+    id: exId,
+    type: "srt",
+    title: base,
+    description:
+      "One audio lesson imported from " + (filename || "SRT") + " · " +
+      plural(cues.length, "line") + ". Attach the matching recording with “Exercise audio” — " +
+      "playback will then follow each line's timecode automatically.",
+    items: cues.map((c, i) => ({
+      id: "line-" + (i + 1),
+      text: c.text,
+      ipa: "",
+      audio: null,
+      start: Math.round(c.start * 1000) / 1000,
+      end:   Math.round(c.end   * 1000) / 1000
+    }))
+  };
+
+  currentPack.exercises.push(exercise);
+  currentProg.exercise = currentPack.exercises.length - 1;
+  currentProg.item = 0;
+  saveDB();
+
+  document.getElementById("pSub").innerHTML =
+    plural(currentPack.exercises.length, "exercise") + " · " +
+    plural(currentPack.exercises.reduce((a,e) => a + e.items.length, 0), "item");
+
+  renderPackInfo();
+  renderPractice();
+  toast('Added "' + base + '" — 1 exercise, ' + plural(cues.length, "line") + ".");
+}
+
+/* ============================================================================
+   DASHBOARD RENDERING
+   ============================================================================ */
+let dashState = {
+  search: "",
+  sort: "recent"
+};
+
+function computeStats(){
+  const packs = Object.values(DB.packs);
+  let exercises = 0, items = 0, completedItems = 0;
+  packs.forEach(p => {
+    const prog = DB.progress[p.id];
+    (p.exercises || []).forEach(ex => {
+      exercises++;
+      (ex.items || []).forEach(it => {
+        items++;
+        const k = ex.id + "::" + it.id;
+        if(prog && prog.completed && prog.completed[k]) completedItems++;
+      });
+    });
+  });
+  return {
+    packs: packs.length,
+    exercises,
+    items,
+    completedItems,
+    pct: items ? Math.round(completedItems / items * 100) : 0
+  };
+}
+
+function packProgress(pack){
+  const prog = DB.progress[pack.id];
+  let total = 0, done = 0;
+  (pack.exercises || []).forEach(ex => {
+    (ex.items || []).forEach(it => {
+      total++;
+      const k = ex.id + "::" + it.id;
+      if(prog && prog.completed && prog.completed[k]) done++;
+    });
+  });
+  return { total, done, pct: total ? Math.round(done/total*100) : 0 };
+}
+
+function renderStats(){
+  const s = computeStats();
+  const el = document.getElementById("statsStrip");
+  el.innerHTML = `
+    <div class="stat">
+      <div class="stat-label">Lesson packs</div>
+      <div class="stat-value">${s.packs}</div>
+      <div class="stat-sub">${s.packs === 0 ? "Upload your first pack" : "in your library"}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Exercises</div>
+      <div class="stat-value">${s.exercises}</div>
+      <div class="stat-sub">across all packs</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Items practiced</div>
+      <div class="stat-value">${s.completedItems}<small>/ ${s.items}</small></div>
+      <div class="stat-sub">${s.pct}% complete</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Overall progress</div>
+      <div class="stat-value">${s.pct}<small>%</small></div>
+      <div class="stat-sub">${s.items - s.completedItems} items remaining</div>
+    </div>
+  `;
+  document.getElementById("dashSub").textContent =
+    s.packs === 0 ? "No packs loaded" :
+    plural(s.packs, "pack") + " · " + plural(s.items, "item");
+}
+
+function filteredPacks(){
+  let list = Object.values(DB.packs);
+  const q = dashState.search.trim().toLowerCase();
+  if(q){
+    list = list.filter(p =>
+      (p.title || "").toLowerCase().includes(q) ||
+      (p.target || "").toLowerCase().includes(q) ||
+      (p.description || "").toLowerCase().includes(q)
+    );
+  }
+  const progMap = {};
+  list.forEach(p => progMap[p.id] = packProgress(p).pct);
+
+  if(dashState.sort === "name"){
+    list.sort((a,b) => (a.title||"").localeCompare(b.title||""));
+  }else if(dashState.sort === "progress"){
+    list.sort((a,b) => (progMap[b.id]||0) - (progMap[a.id]||0));
+  }else{
+    list.sort((a,b) => (b.importedAt||0) - (a.importedAt||0));
+  }
+  return list;
+}
+
+function renderLibrary(){
+  const grid = document.getElementById("libraryGrid");
+  const list = filteredPacks();
+  grid.innerHTML = "";
+
+  if(list.length === 0){
+    const isFiltered = dashState.search.trim().length > 0 || Object.keys(DB.packs).length > 0;
+    grid.innerHTML = `
+      <div class="lib-empty">
+        <div class="glyph">◇</div>
+        <h3>${isFiltered ? "No packs match" : "Your library is empty"}</h3>
+        <p>${isFiltered
+          ? "Try a different search, or clear the filter to see all packs."
+          : "Upload a JSON file with exercises to get started, or download the blank template to see the required format."}</p>
+        <div class="cta-row">
+          <button class="btn primary lg" onclick="openUploadModal()">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8 11V2M4.5 5.5L8 2l3.5 3.5M2.5 13.5h11"/>
+            </svg>
+            Upload JSON
+          </button>
+          <button class="btn lg" onclick="downloadTemplate()">Download template</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  list.forEach(pack => {
+    const card = document.createElement("article");
+    card.className = "pack";
+    const { total, done, pct } = packProgress(pack);
+    const exerciseCount = (pack.exercises || []).length;
+    const prog = DB.progress[pack.id];
+    const isFresh = !prog || (prog.exercise === 0 && prog.item === 0 && done === 0);
+
+    card.innerHTML = `
+      <div class="pack-top">
+        <div class="pack-glyph">${escapeHtml(pack.target || "/—/")}</div>
+        <div class="pack-info">
+          <div class="pack-title">${escapeHtml(pack.title)}</div>
+          <div class="pack-desc">${escapeHtml(pack.description || "No description")}</div>
+        </div>
+        <button class="pack-menu" data-menu title="Pack actions">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+            <circle cx="3" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="13" cy="8" r="1.4"/>
+          </svg>
+        </button>
+      </div>
+      <div class="pack-meta">
+        <span><b>${exerciseCount}</b> exercise${exerciseCount===1?"":"s"}</span>
+        <span><b>${total}</b> item${total===1?"":"s"}</span>
+        <span>${fmtDate(pack.importedAt)}</span>
+      </div>
+      <div class="pack-progress">
+        <div class="pack-progress-head">
+          <span>Progress</span>
+          <span><b>${pct}%</b> · ${done}/${total}</span>
+        </div>
+        <div class="bar"><i style="width:${pct}%"></i></div>
+      </div>
+      <div class="pack-foot">
+        <button class="btn primary" data-open>
+          ${isFresh ? "Start practicing" : "Continue"}
+        </button>
+        <div class="spacer"></div>
+        ${prog && prog.lastVisit ? `<span style="font-size:.7rem;color:var(--muted2)">${fmtDate(prog.lastVisit)}</span>` : ""}
+      </div>
+    `;
+
+    card.addEventListener("click", (e) => {
+      if(e.target.closest("[data-menu]")) return;
+      openPack(pack.id);
+    });
+    card.querySelector("[data-open]").addEventListener("click", (e) => {
+      e.stopPropagation();
+      openPack(pack.id);
+    });
+    card.querySelector("[data-menu]").addEventListener("click", (e) => {
+      e.stopPropagation();
+      showPackMenu(pack.id, e.currentTarget);
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+function renderDashboard(){
+  renderStats();
+  renderLibrary();
+}
+
+/* ============================================================================
+   PACK MENU (small popover)
+   ============================================================================ */
+let menuEl = null;
+function showPackMenu(packId, anchor){
+  closePackMenu();
+  const pack = DB.packs[packId];
+  if(!pack) return;
+
+  menuEl = document.createElement("div");
+  menuEl.style.cssText = `
+    position:fixed;z-index:250;background:#1b1b1f;
+    border:1px solid #3a3a44;border-radius:10px;
+    padding:5px;box-shadow:0 18px 50px rgba(0,0,0,.55);
+    min-width:170px;font-size:.82rem;
+  `;
+  menuEl.innerHTML = `
+    <button data-act="export" style="display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:transparent;border:none;color:#ececef;padding:8px 10px;border-radius:7px;font-size:.82rem;cursor:pointer">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 2v8M5 7l3 3 3-3M2.5 13.5h11"/>
+      </svg>
+      Export as JSON
+    </button>
+    <button data-act="reset" style="display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:transparent;border:none;color:#ececef;padding:8px 10px;border-radius:7px;font-size:.82rem;cursor:pointer">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 5a6 6 0 0110.5-2M14 11a6 6 0 01-10.5 2"/>
+        <path d="M13 1.5v3h-3M3 14.5v-3h3"/>
+      </svg>
+      Reset progress
+    </button>
+    <div style="height:1px;background:#2a2a31;margin:4px 6px"></div>
+    <button data-act="delete" style="display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:transparent;border:none;color:#e58a8a;padding:8px 10px;border-radius:7px;font-size:.82rem;cursor:pointer">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 4.5h10M5.5 4.5V3a1 1 0 011-1h3a1 1 0 011 1v1.5M6.5 7v5M9.5 7v5M4 4.5l.7 9a1 1 0 001 .9h4.6a1 1 0 001-.9l.7-9"/>
+      </svg>
+      Delete pack
+    </button>
+  `;
+  document.body.appendChild(menuEl);
+
+  menuEl.querySelectorAll("button").forEach(b => {
+    b.addEventListener("mouseenter", () => {
+      b.style.background = b.dataset.act === "delete" ? "rgba(229,138,138,.12)" : "#2b2b32";
+    });
+    b.addEventListener("mouseleave", () => { b.style.background = "transparent"; });
+  });
+
+  menuEl.querySelector('[data-act="export"]').addEventListener("click", () => {
+    exportPack(packId);
+    closePackMenu();
+  });
+  menuEl.querySelector('[data-act="reset"]').addEventListener("click", () => {
+    closePackMenu();
+    if(!confirm(`Reset all progress for "${pack.title}"?`)) return;
+    const old = DB.progress[packId];
+    if(old && old.recordings){
+      Object.values(old.recordings).forEach(u => {
+        if(u && u.startsWith("blob:")){ try{ URL.revokeObjectURL(u); }catch(e){} }
+      });
+    }
+    DB.progress[packId] = freshProgress();
+    saveDB();
+    renderDashboard();
+    toast("Progress reset.");
+  });
+  menuEl.querySelector('[data-act="delete"]').addEventListener("click", () => {
+    closePackMenu();
+    if(!confirm(`Delete "${pack.title}" and its progress? This cannot be undone.`)) return;
+    const old = DB.progress[packId];
+    if(old && old.recordings){
+      Object.values(old.recordings).forEach(u => {
+        if(u && u.startsWith("blob:")){ try{ URL.revokeObjectURL(u); }catch(e){} }
+      });
+    }
+    if(sessionAudio[packId] && sessionAudio[packId].startsWith("blob:")){
+      try{ URL.revokeObjectURL(sessionAudio[packId]); }catch(e){}
+    }
+    delete sessionAudio[packId];
+    delete DB.packs[packId];
+    delete DB.progress[packId];
+    saveDB();
+    renderDashboard();
+    toast("Pack deleted.");
+  });
+
+  const rect = anchor.getBoundingClientRect();
+  const mw = menuEl.offsetWidth;
+  let left = rect.right - mw;
+  if(left < 10) left = 10;
+  let top = rect.bottom + 6;
+  if(top + menuEl.offsetHeight > window.innerHeight - 10){
+    top = rect.top - menuEl.offsetHeight - 6;
+  }
+  menuEl.style.left = left + "px";
+  menuEl.style.top = top + "px";
+
+  setTimeout(() => {
+    document.addEventListener("click", closePackMenu, { once: true });
+    document.addEventListener("scroll", closePackMenu, { once: true, capture: true });
+  }, 0);
+}
+function closePackMenu(){
+  if(menuEl){ menuEl.remove(); menuEl = null; }
+}
+
+/* ============================================================================
+   IMPORT / EXPORT
+   ============================================================================ */
+function importPackFromJson(raw, sourceName){
+  const { pack, errors } = validatePack(raw);
+  if(errors){
+    return { ok: false, errors };
+  }
+
+  const existing = DB.packs[pack.id];
+  if(existing){
+    if(!confirm(`A pack with id "${pack.id}" already exists ("${existing.title}"). Replace it?`)){
+      return { ok: false, errors: ["Import cancelled."] };
+    }
+  }
+
+  if(existing && DB.progress[pack.id]){
+    const old = DB.progress[pack.id];
+    if(old.recordings){
+      Object.values(old.recordings).forEach(u => {
+        if(u && u.startsWith("blob:")){ try{ URL.revokeObjectURL(u); }catch(e){} }
+      });
+    }
+  }
+
+  DB.packs[pack.id] = pack;
+  if(!DB.progress[pack.id]){
+    DB.progress[pack.id] = freshProgress();
+  }
+  saveDB();
+  renderDashboard();
+  return { ok: true, pack };
+}
+
+function exportPack(packId){
+  const pack = DB.packs[packId];
+  if(!pack) return;
+  const clean = { ...pack };
+  delete clean.importedAt;
+  const blob = new Blob([JSON.stringify(clean, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = (pack.id || "pack") + ".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+  toast("Pack exported.");
+}
+
+function exportLibrary(){
+  if(Object.keys(DB.packs).length === 0){
+    toast("No packs to export.");
+    return;
+  }
+  const payload = {
+    dashboard: "pronunciation-library",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    packs: Object.values(DB.packs).map(p => {
+      const clean = { ...p };
+      delete clean.importedAt;
+      return clean;
+    })
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "pronunciation-library-" + new Date().toISOString().slice(0,10) + ".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+  toast("Library exported.");
+}
+
+function downloadTemplate(){
+  const tmpl = {
+    id: "my-lesson",
+    title: "My Lesson",
+    target: "/x/",
+    description: "Short description shown on the dashboard card.",
+    defaultRepetitions: 3,
+    exercises: [
+      {
+        id: "isolated",
+        type: "isolated",
+        title: "Isolated Sound",
+        description: "Describe what to focus on in this exercise.",
+        items: [
+          { id: "x", text: "/x/", ipa: "/x/", audio: null }
+        ]
+      },
+      {
+        id: "words",
+        type: "words",
+        title: "Words",
+        description: "Short practice words.",
+        items: [
+          { id: "one", text: "one", ipa: "/wʌn/" },
+          { id: "two", text: "two", ipa: "/tu/" }
+        ]
+      }
+    ]
+  };
+  const blob = new Blob([JSON.stringify(tmpl, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "pronunciation-pack-template.json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+  toast("Template downloaded.");
+}
+
+/* ============================================================================
+   UPLOAD MODAL
+   ============================================================================ */
+let pendingPack = null;
+const uploadModal   = document.getElementById("uploadModal");
+const dropZone      = document.getElementById("dropZone");
+const jsonInput     = document.getElementById("jsonInput");
+const jsonPaste     = document.getElementById("jsonPaste");
+const validationMsg = document.getElementById("validationMsg");
+const confirmUpload = document.getElementById("confirmUpload");
+
+function openUploadModal(){
+  pendingPack = null;
+  jsonPaste.value = "";
+  validationMsg.className = "validation";
+  validationMsg.innerHTML = "";
+  confirmUpload.disabled = true;
+  uploadModal.classList.add("on");
+}
+function closeUploadModal(){
+  uploadModal.classList.remove("on");
+}
+
+function setValidation(result){
+  if(result.errors){
+    validationMsg.className = "validation on err";
+    const list = result.errors.slice(0, 8).map(e => `<li>${escapeHtml(e)}</li>`).join("");
+    const more = result.errors.length > 8 ? `<li>…and ${result.errors.length - 8} more</li>` : "";
+    validationMsg.innerHTML = `<strong>Couldn't read this pack.</strong><ul>${list}${more}</ul>`;
+    confirmUpload.disabled = true;
+    pendingPack = null;
+  }else{
+    const p = result.pack;
+    const exCount = p.exercises.length;
+    const itemCount = p.exercises.reduce((a, e) => a + e.items.length, 0);
+    validationMsg.className = "validation on ok";
+    validationMsg.innerHTML = `
+      <strong>✓ Valid pack: ${escapeHtml(p.title)}</strong>
+      <div class="pack-preview">
+        Target ${escapeHtml(p.target)} · ${plural(exCount, "exercise")} · ${plural(itemCount, "item")} · ${p.defaultRepetitions} reps
+      </div>
+    `;
+    confirmUpload.disabled = false;
+    pendingPack = p;
+  }
+}
+
+function attemptParse(text, sourceName){
+  text = text.trim();
+  if(!text){
+    validationMsg.className = "validation on err";
+    validationMsg.innerHTML = "<strong>Nothing to import.</strong>";
+    confirmUpload.disabled = true;
+    pendingPack = null;
+    return;
+  }
+  let raw;
+  try{
+    raw = JSON.parse(text);
+  }catch(err){
+    validationMsg.className = "validation on err";
+    validationMsg.innerHTML = `<strong>Invalid JSON.</strong><ul><li>${escapeHtml(err.message)}</li></ul>`;
+    confirmUpload.disabled = true;
+    pendingPack = null;
+    return;
+  }
+
+  if(raw && raw.dashboard === "pronunciation-library" && Array.isArray(raw.packs)){
+    let ok = 0, fail = 0;
+    const allErrors = [];
+    raw.packs.forEach(p => {
+      const res = validatePack(p);
+      if(res.errors){ fail++; allErrors.push(...res.errors); }
+      else{
+        DB.packs[res.pack.id] = res.pack;
+        if(!DB.progress[res.pack.id]) DB.progress[res.pack.id] = freshProgress();
+        ok++;
+      }
+    });
+    if(ok > 0){
+      saveDB(); renderDashboard();
+      closeUploadModal();
+      toast(`Imported ${plural(ok, "pack")}${fail ? " · " + fail + " skipped" : ""}.`);
+    }else{
+      setValidation({ errors: allErrors.length ? allErrors : ["No valid packs found."] });
+    }
+    return;
+  }
+
+  const result = validatePack(raw);
+  if(sourceName){
+    // nothing special; keeps signature consistent
+  }
+  setValidation(result);
+}
+
+jsonInput.addEventListener("change", e => {
+  const f = e.target.files[0];
+  e.target.value = "";
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => attemptParse(String(ev.target.result || ""), f.name);
+  r.onerror = () => {
+    validationMsg.className = "validation on err";
+    validationMsg.innerHTML = "<strong>Could not read that file.</strong>";
+  };
+  r.readAsText(f);
+});
+
+dropZone.addEventListener("click", () => jsonInput.click());
+dropZone.addEventListener("dragover", e => {
+  e.preventDefault();
+  dropZone.classList.add("over");
+});
+dropZone.addEventListener("dragleave", () => dropZone.classList.remove("over"));
+dropZone.addEventListener("drop", e => {
+  e.preventDefault();
+  dropZone.classList.remove("over");
+  const f = e.dataTransfer.files[0];
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => attemptParse(String(ev.target.result || ""), f.name);
+  r.readAsText(f);
+});
+
+let pasteTimer = null;
+jsonPaste.addEventListener("input", () => {
+  clearTimeout(pasteTimer);
+  pasteTimer = setTimeout(() => {
+    if(!jsonPaste.value.trim()) return;
+    attemptParse(jsonPaste.value, null);
+  }, 350);
+});
+
+confirmUpload.addEventListener("click", () => {
+  if(!pendingPack){ toast("Nothing to import."); return; }
+  const res = importPackFromJson(pendingPack, null);
+  if(res.ok){
+    closeUploadModal();
+    toast(`Imported "${res.pack.title}".`);
+  }else if(res.errors){
+    setValidation({ errors: res.errors });
+  }
+});
+
+uploadModal.addEventListener("click", e => {
+  if(e.target.closest("[data-close]")) closeUploadModal();
+});
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape" && uploadModal.classList.contains("on")) closeUploadModal();
+});
+
+/* ============================================================================
+   VIEW SWITCHING
+   ============================================================================ */
+function showView(name){
+  document.getElementById("viewDashboard").classList.toggle("active", name === "dashboard");
+  document.getElementById("viewPractice").classList.toggle("active", name === "practice");
+  window.scrollTo(0,0);
+}
+
+/* ============================================================================
+   PRACTICE RUNTIME
+   ============================================================================ */
+let currentPack = null;
+let currentProg = null;
+
+// audio runtime
+let activeAudio    = null;
+let recordAudio    = null;
+let mediaRecorder  = null;
+let recordChunks   = [];
+let recordStart    = 0;
+let recordTimer    = null;
+let audioContext   = null;
+let activeRAF      = null;
+let micStream      = null;
+
+const mainCanvas = document.getElementById("waveform");
+const recCanvas  = document.getElementById("recWaveform");
+
+const currentEx   = () => currentPack ? currentPack.exercises[currentProg.exercise] : null;
+const currentItem = () => {
+  const ex = currentEx();
+  return ex && ex.items ? ex.items[currentProg.item] : null;
+};
+function currentKey(){
+  const ex = currentEx(), it = currentItem();
+  return (ex && it) ? (ex.id + "::" + it.id) : null;
+}
+function exerciseSessionKey(exId){
+  return currentPack ? (currentPack.id + "::" + exId) : null;
+}
+
+/* Continuous sync mode: the exercise has multiple timed items AND we're using
+   exercise-level or pack-level audio (not a per-item override). In this mode
+   the item pointer follows the audio position automatically. */
+function isContinuousMode(){
+  if(!currentPack || !currentProg) return false;
+  const ex = currentEx();
+  if(!ex || !ex.items || ex.items.length < 2) return false;
+
+  let timed = 0;
+  for(const it of ex.items){
+    if(Number.isFinite(it.start) && Number.isFinite(it.end)) timed++;
+  }
+  if(timed < 2) return false;
+
+  if(currentProg.exerciseAudio[ex.id]) return true;
+  if(sessionExerciseAudio[exerciseSessionKey(ex.id)]) return true;
+  if(currentProg.packAudio) return true;
+  if(sessionAudio[currentPack.id]) return true;
+  return false;
+}
+
+/* Order of precedence for the reference audio.
+   In continuous mode, exercise/pack audio takes priority so the whole
+   lesson plays end-to-end and the pointer can follow along. */
+function getAudioSrc(){
+  if(!currentPack) return null;
+  const ex = currentEx();
+  const it = currentItem();
+  if(!ex || !it) return null;
+  const k = ex.id + "::" + it.id;
+
+  if(isContinuousMode()){
+    return currentProg.exerciseAudio[ex.id]
+        || sessionExerciseAudio[exerciseSessionKey(ex.id)]
+        || currentProg.packAudio
+        || sessionAudio[currentPack.id]
+        || null;
+  }
+
+  return currentProg.customAudio[k]
+      || it.audio
+      || currentProg.exerciseAudio[ex.id]
+      || sessionExerciseAudio[exerciseSessionKey(ex.id)]
+      || currentProg.packAudio
+      || sessionAudio[currentPack.id]
+      || null;
+}
+function getAudioSourceLabel(){
+  if(!currentPack) return null;
+  const ex = currentEx();
+  const it = currentItem();
+  if(!ex || !it) return null;
+  const k = ex.id + "::" + it.id;
+
+  if(isContinuousMode()){
+    if(currentProg.exerciseAudio[ex.id]) return "Exercise audio";
+    if(sessionExerciseAudio[exerciseSessionKey(ex.id)]) return "Exercise audio (session)";
+    if(currentProg.packAudio) return "Pack audio";
+    if(sessionAudio[currentPack.id]) return "Pack audio (session)";
+  }
+
+  if(currentProg.customAudio[k]) return "Item audio";
+  if(it.audio) return "Item audio";
+  if(currentProg.exerciseAudio[ex.id]) return "Exercise audio";
+  if(sessionExerciseAudio[exerciseSessionKey(ex.id)]) return "Exercise audio (session)";
+  if(currentProg.packAudio) return "Pack audio";
+  if(sessionAudio[currentPack.id]) return "Pack audio (session)";
+  return null;
+}
+
+function openPack(packId){
+  const pack = DB.packs[packId];
+  if(!pack) return;
+  currentPack = pack;
+  currentProg = getProgress(packId);
+  currentProg.lastVisit = Date.now();
+  saveDB();
+
+  document.getElementById("pLogo").textContent  = pack.target || "/—/";
+  document.getElementById("pTitle").textContent = pack.title;
+  document.getElementById("pSub").innerHTML =
+    plural(pack.exercises.length, "exercise") + " · " +
+    plural(pack.exercises.reduce((a,e) => a + e.items.length, 0), "item");
+
+  document.querySelectorAll("[data-mode]").forEach(b => {
+    b.classList.toggle("active", b.dataset.mode === currentProg.mode);
+  });
+  document.querySelectorAll("[data-speed]").forEach(b => {
+    b.classList.toggle("active", Number(b.dataset.speed) === currentProg.speed);
+  });
+
+  renderNotes();
+  renderImages();
+  renderPackInfo();
+  renderPractice();
+
+  showView("practice");
+}
+
+function renderPractice(){
+  if(!currentPack){ return; }
+  const ex = currentEx();
+  if(!ex) return;
+  const item = currentItem();
+  const k = item ? ex.id + "::" + item.id : null;
+
+  document.getElementById("exTag").textContent   = ex.type;
+  document.getElementById("exTitle").textContent = ex.title;
+  document.getElementById("exDesc").textContent  = ex.description || "";
+  document.getElementById("exCount").textContent = (currentProg.item + 1) + " / " + ex.items.length;
+
+  const wordEl = document.getElementById("targetWord");
+  const wordTxt = item ? item.text : "—";
+  wordEl.textContent = wordTxt;
+  wordEl.classList.toggle("long",  wordTxt.length > 26 && wordTxt.length <= 62);
+  wordEl.classList.toggle("xlong", wordTxt.length > 62);
+
+  document.getElementById("targetIpa").textContent  = item && item.ipa ? item.ipa : "";
+
+  updateAudioStatusPill();
+
+  const recStatus = document.getElementById("recStatus");
+  if(k && currentProg.recordings[k]){
+    recStatus.textContent = "Recording saved";
+    recStatus.classList.add("saved");
+  }else{
+    recStatus.textContent = "No recording yet";
+    recStatus.classList.remove("saved");
+  }
+
+  updateFootInfo();
+
+  renderNav();
+  renderChips();
+  renderRing();
+  renderControls();
+  renderBookmarks();
+  updatePlayPauseUI();
+
+  drawIdleWave(mainCanvas, "#4c4c57");
+  drawIdleWave(recCanvas, "#4c4c57");
+}
+
+/* -------- lightweight refresh used during auto-sync --------- */
+function updateAudioStatusPill(){
+  const src = getAudioSrc();
+  const label = getAudioSourceLabel();
+  const statusWrap = document.getElementById("audioStatus");
+  const statusText = document.getElementById("audioStatusText");
+  const item = currentItem();
+  if(!statusWrap || !statusText) return;
+
+  statusWrap.classList.remove("ready","syncing");
+
+  if(src){
+    let note = "Audio ready — " + label;
+    if(isContinuousMode()){
+      note += " · auto-sync";
+      statusWrap.classList.add("syncing");
+    } else {
+      statusWrap.classList.add("ready");
+    }
+    if(item && Number.isFinite(item.start)){
+      note += " · " + formatTime(item.start) +
+        (Number.isFinite(item.end) ? "–" + formatTime(item.end) : "");
+    }
+    statusText.textContent = note;
+  }else{
+    statusText.textContent = "No reference audio — upload Pack, Exercise, or Item audio";
+  }
+}
+
+function updateFootInfo(){
+  const ex = currentEx(); const item = currentItem();
+  if(!ex || !item || !currentPack) return;
+  const k = ex.id + "::" + item.id;
+  const reps = currentProg.repetitions[k] || 0;
+  document.getElementById("footInfo").textContent =
+    "Item " + (currentProg.item + 1) + " of " + ex.items.length +
+    " · " + reps + " / " + currentPack.defaultRepetitions + " reps" +
+    (currentProg.completed[k] ? " · ✓ complete" : "");
+}
+
+function updateChipsLight(){
+  const ex = currentEx(); if(!ex) return;
+  const grid = document.getElementById("chipGrid");
+  if(!grid) return;
+  const chips = grid.querySelectorAll(".chip");
+  if(!chips.length) return;
+
+  const isPlayingCont = !!(activeAudio && !activeAudio.paused && !activeAudio.ended
+                          && activeAudio.dataset.continuous === "1");
+
+  chips.forEach((c, i) => {
+    const it = ex.items[i]; if(!it) return;
+    const kk = ex.id + "::" + it.id;
+    c.classList.toggle("active", i === currentProg.item);
+    c.classList.toggle("done", !!currentProg.completed[kk]);
+    c.classList.toggle("playing", i === currentProg.item && isPlayingCont);
+    const meta = c.querySelector(".chip-meta");
+    if(meta){
+      const reps = currentProg.repetitions[kk] || 0;
+      meta.textContent = currentProg.completed[kk]
+        ? "✓ done"
+        : reps + " / " + currentPack.defaultRepetitions;
+    }
+  });
+
+  const doneCount = ex.items.filter(it => currentProg.completed[ex.id + "::" + it.id]).length;
+  const itemsCountEl = document.getElementById("itemsCount");
+  if(itemsCountEl) itemsCountEl.textContent = doneCount + " / " + ex.items.length + " done";
+
+  const navItems = document.querySelectorAll("#pNav .p-nav-item");
+  const navEl = navItems[currentProg.exercise];
+  if(navEl){
+    const total = ex.items.length;
+    const complete = total > 0 && doneCount === total;
+    navEl.classList.toggle("done", complete);
+    const metaEl = navEl.querySelector(".meta");
+    if(metaEl) metaEl.textContent = complete ? "✓" : doneCount + "/" + total;
+  }
+}
+
+/* Full re-render, but skip rebuilding the canvas (safe during playback). */
+function refreshItemUI(){
+  if(!currentPack || !currentProg) return;
+  const ex = currentEx();
+  if(!ex) return;
+  const item = currentItem();
+  const k = item ? ex.id + "::" + item.id : null;
+
+  const exCountEl = document.getElementById("exCount");
+  if(exCountEl) exCountEl.textContent = (currentProg.item + 1) + " / " + ex.items.length;
+
+  const wordEl = document.getElementById("targetWord");
+  const wordTxt = item ? item.text : "—";
+  if(wordEl && wordEl.textContent !== wordTxt){
+    wordEl.textContent = wordTxt;
+    wordEl.classList.toggle("long",  wordTxt.length > 26 && wordTxt.length <= 62);
+    wordEl.classList.toggle("xlong", wordTxt.length > 62);
+  }
+  const ipaEl = document.getElementById("targetIpa");
+  if(ipaEl) ipaEl.textContent = item && item.ipa ? item.ipa : "";
+
+  updateAudioStatusPill();
+
+  const recStatus = document.getElementById("recStatus");
+  if(recStatus){
+    if(k && currentProg.recordings[k]){
+      recStatus.textContent = "Recording saved";
+      recStatus.classList.add("saved");
+    }else{
+      recStatus.textContent = "No recording yet";
+      recStatus.classList.remove("saved");
+    }
+  }
+
+  updateFootInfo();
+  updateChipsLight();
+  renderBookmarks();
+}
+
+/* -------- continuous playback sync --------- */
+function syncItemToTime(t){
+  const ex = currentEx();
+  if(!ex) return;
+  let idx = -1;
+  for(let i = ex.items.length - 1; i >= 0; i--){
+    const it = ex.items[i];
+    if(Number.isFinite(it.start) && t >= it.start){ idx = i; break; }
+  }
+  if(idx === -1) idx = 0;
+  if(idx !== currentProg.item){
+    currentProg.item = idx;
+    saveDB();
+    refreshItemUI();
+  }
+}
+
+function incrementRepForItemSilent(ex, it){
+  const k = ex.id + "::" + it.id;
+  currentProg.repetitions[k] = (currentProg.repetitions[k] || 0) + 1;
+  if(currentProg.repetitions[k] >= currentPack.defaultRepetitions){
+    currentProg.completed[k] = true;
+  }
+}
+
+/* -------- navigation between items (auto-sync-aware) --------- */
+function goToItem(idx){
+  const ex = currentEx(); if(!ex) return;
+  if(idx < 0 || idx >= ex.items.length) return;
+  if(idx === currentProg.item && !(activeAudio && activeAudio.dataset.continuous === "1")) return;
+
+  currentProg.item = idx;
+  saveDB();
+
+  if(activeAudio && activeAudio.dataset.continuous === "1" && !activeAudio.ended){
+    const it = ex.items[idx];
+    if(Number.isFinite(it.start)){
+      try{ activeAudio.currentTime = it.start; }catch(e){}
+      activeAudio._lastTime = it.start;
+    }
+    refreshItemUI();
+  }else{
+    renderPractice();
+  }
+}
+
+function renderNav(){
+  const nav = document.getElementById("pNav");
+  nav.innerHTML = "";
+  currentPack.exercises.forEach((ex, i) => {
+    const total = ex.items.length;
+    const done = ex.items.filter(it => currentProg.completed[ex.id + "::" + it.id]).length;
+    const complete = total > 0 && done === total;
+
+    const hasExAudio = !!(currentProg.exerciseAudio[ex.id]
+                      || sessionExerciseAudio[exerciseSessionKey(ex.id)]);
+
+    const b = document.createElement("button");
+    b.className = "p-nav-item";
+    if(i === currentProg.exercise) b.classList.add("active");
+    if(complete) b.classList.add("done");
+    b.innerHTML =
+      '<span class="num">' + (i + 1) + '</span>' +
+      '<span class="lbl">' + escapeHtml(ex.title) + '</span>' +
+      (hasExAudio
+        ? '<svg class="nav-audio" width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" title="Exercise audio loaded">' +
+            '<path d="M3 6v4h2l3 3V3L5 6H3zM11 5.5a3 3 0 010 5"/>' +
+          '</svg>'
+        : '') +
+      '<span class="meta">' + (complete ? "✓" : done + "/" + total) + '</span>';
+    b.addEventListener("click", () => {
+      stopAllAudio();
+      currentProg.exercise = i;
+      currentProg.item = 0;
+      saveDB();
+      renderPractice();
+    });
+    nav.appendChild(b);
+  });
+}
+
+function renderChips(){
+  const grid = document.getElementById("chipGrid");
+  grid.innerHTML = "";
+  const ex = currentEx();
+  if(!ex) return;
+  ex.items.forEach((it, i) => {
+    const k = ex.id + "::" + it.id;
+    const reps = currentProg.repetitions[k] || 0;
+    const done = currentProg.completed[k];
+    const active = i === currentProg.item;
+
+    const c = document.createElement("button");
+    c.className = "chip";
+    if(active) c.classList.add("active");
+    if(done) c.classList.add("done");
+    c.innerHTML =
+      '<div class="chip-word">' + escapeHtml(it.text) + '</div>' +
+      '<div class="chip-meta">' + (done ? "✓ done" : reps + " / " + currentPack.defaultRepetitions) + '</div>';
+    c.title = it.text;
+    c.addEventListener("click", () => goToItem(i));
+    grid.appendChild(c);
+  });
+  const doneCount = ex.items.filter(it => currentProg.completed[ex.id + "::" + it.id]).length;
+  document.getElementById("itemsCount").textContent = doneCount + " / " + ex.items.length + " done";
+  document.getElementById("itemsTag").textContent = "Items · " + ex.title;
+  updateChipsLight();
+}
+
+function renderRing(){
+  let total = 0, done = 0;
+  currentPack.exercises.forEach(ex => ex.items.forEach(it => {
+    total++;
+    if(currentProg.completed[ex.id + "::" + it.id]) done++;
+  }));
+  const pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById("ring").style.setProperty("--pct", pct + "%");
+  document.getElementById("ringPct").textContent = pct + "%";
+  document.getElementById("progMeta").innerHTML =
+    '<b>' + done + '</b> of <b>' + total + '</b> items complete';
+}
+
+function renderControls(){
+  document.querySelectorAll("[data-mode]").forEach(b => {
+    b.classList.toggle("active", b.dataset.mode === currentProg.mode);
+  });
+  document.querySelectorAll("[data-speed]").forEach(b => {
+    b.classList.toggle("active", Number(b.dataset.speed) === currentProg.speed);
+  });
+}
+
+function renderPackInfo(){
+  if(!currentPack) return;
+  const box = document.getElementById("packInfoBox");
+  const total = currentPack.exercises.reduce((a,e) => a + e.items.length, 0);
+  const audioLevels = [];
+  if(currentProg.packAudio || sessionAudio[currentPack.id]) audioLevels.push("Pack");
+  if(Object.keys(currentProg.exerciseAudio || {}).length ||
+     Object.keys(sessionExerciseAudio).some(k => k.startsWith(currentPack.id + "::"))) audioLevels.push("Exercise");
+  if(Object.keys(currentProg.customAudio || {}).length) audioLevels.push("Item");
+
+  box.innerHTML = `
+    <div class="guide-item">
+      <strong>${escapeHtml(currentPack.title)}</strong>
+      <span>${escapeHtml(currentPack.description || "No description provided.")}</span>
+    </div>
+    <div class="guide-item">
+      <strong>Target</strong>
+      <span>${escapeHtml(currentPack.target || "/—/")}</span>
+    </div>
+    <div class="guide-item">
+      <strong>Contents</strong>
+      <span>${plural(currentPack.exercises.length, "exercise")} · ${plural(total, "item")} · ${currentPack.defaultRepetitions} repetitions per item</span>
+    </div>
+    <div class="guide-item">
+      <strong>Audio loaded</strong>
+      <span>${audioLevels.length ? audioLevels.join(" · ") + " level" : "None yet"}</span>
+    </div>
+    <div class="guide-item">
+      <strong>Pack id</strong>
+      <span style="font-family:ui-monospace,Menlo,Consolas,monospace">${escapeHtml(currentPack.id)}</span>
+    </div>
+    <div class="guide-item">
+      <strong>Imported</strong>
+      <span>${currentPack.importedAt ? new Date(currentPack.importedAt).toLocaleString() : "—"}</span>
+    </div>
+  `;
+}
+
+/* ---- waveform helpers ---- */
+function drawIdleWave(canvas, color){
+  if(!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth || 1;
+  const h = canvas.clientHeight || 1;
+  if(canvas.width !== w*dpr){ canvas.width = w*dpr; canvas.height = h*dpr; }
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle = color || "#4c4c57";
+  ctx.globalAlpha = 0.6; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0,h/2); ctx.lineTo(w,h/2); ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+/* ---- merged play / pause UI ---- */
+function updatePlayPauseUI(){
+  const btn = document.getElementById("playPauseBtn");
+  const icon = document.getElementById("ppIcon");
+  const label = document.getElementById("ppLabel");
+  if(!btn || !icon || !label) return;
+
+  const playing = !!(activeAudio && !activeAudio.paused && !activeAudio.ended);
+
+  btn.classList.toggle("playing", playing);
+  btn.classList.toggle("primary", !playing);
+
+  if(playing){
+    icon.innerHTML = '<rect x="2" y="1.5" width="3" height="9" rx="1"/><rect x="7" y="1.5" width="3" height="9" rx="1"/>';
+    label.textContent = "Pause";
+    btn.title = "Pause (Space)";
+  }else{
+    icon.innerHTML = '<path d="M2.5 1.2v9.6l8-4.8z"/>';
+    label.textContent = "Play";
+    btn.title = "Play (Space)";
+  }
+
+  // chip "playing" indicator
+  const grid = document.getElementById("chipGrid");
+  if(grid && currentProg){
+    const isPlayingCont = playing && activeAudio.dataset.continuous === "1";
+    const chips = grid.querySelectorAll(".chip");
+    chips.forEach((c, i) => c.classList.toggle("playing", i === currentProg.item && isPlayingCont));
+  }
+}
+
+function stopAllAudio(){
+  if(activeAudio){ try{ activeAudio.pause(); activeAudio.currentTime = 0; }catch(e){} activeAudio = null; }
+  if(recordAudio){ try{ recordAudio.pause(); recordAudio.currentTime = 0; }catch(e){} recordAudio = null; }
+  if(activeRAF){ cancelAnimationFrame(activeRAF); activeRAF = null; }
+  drawIdleWave(mainCanvas, "#4c4c57");
+  updatePlayPauseUI();
+}
+function getAudioContext(){
+  if(!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  if(audioContext.state === "suspended") audioContext.resume();
+  return audioContext;
+}
+
+function visualizeElement(audio, canvas, color){
+  try{
+    const ctx = getAudioContext();
+    let an = audio._vizAnalyser;
+    if(!an){
+      const src = ctx.createMediaElementSource(audio);
+      an = ctx.createAnalyser();
+      an.fftSize = 512;
+      src.connect(an);
+      an.connect(ctx.destination);
+      audio._vizAnalyser = an;
+    }
+    const data = new Uint8Array(an.fftSize);
+    const c2d = canvas.getContext("2d");
+
+    function draw(){
+      if(audio.paused || audio.ended){ drawIdleWave(canvas, "#4c4c57"); return; }
+      an.getByteTimeDomainData(data);
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      const dpr = window.devicePixelRatio || 1;
+      if(canvas.width !== w*dpr){ canvas.width = w*dpr; canvas.height = h*dpr; }
+      c2d.setTransform(dpr,0,0,dpr,0,0);
+      c2d.clearRect(0,0,w,h);
+
+      c2d.strokeStyle = "#2a2a32"; c2d.lineWidth = 1;
+      c2d.beginPath(); c2d.moveTo(0,h/2); c2d.lineTo(w,h/2); c2d.stroke();
+
+      c2d.strokeStyle = color; c2d.lineWidth = 1.8;
+      c2d.beginPath();
+      const slice = w / (data.length - 1);
+      for(let i = 0; i < data.length; i++){
+        const x = i * slice;
+        const y = (data[i] / 255) * h;
+        if(i === 0) c2d.moveTo(x,y); else c2d.lineTo(x,y);
+      }
+      c2d.stroke();
+      activeRAF = requestAnimationFrame(draw);
+    }
+    draw();
+  }catch(e){ drawIdleWave(canvas, "#4c4c57"); }
+}
+
+/* ---- reference playback (auto-sync aware) ---- */
+function playReference(offset){
+  const src = getAudioSrc();
+  if(!src){ toast("No reference audio for this item — upload one or use Voice."); return; }
+
+  const continuous = isContinuousMode();
+  const key = continuous
+    ? ("cont:" + currentPack.id + ":" + currentEx().id)
+    : currentKey();
+
+  // Resume a paused element for the same source
+  if(offset == null && activeAudio && activeAudio.dataset.key === key &&
+     activeAudio.paused && !activeAudio.ended){
+    activeAudio.play()
+      .then(() => { visualizeElement(activeAudio, mainCanvas, "#e0e0e6"); updatePlayPauseUI(); })
+      .catch(() => toast("The browser could not play this audio."));
+    return;
+  }
+
+  stopAllAudio();
+
+  const audio = new Audio(src);
+  audio.dataset.key = key;
+  audio.dataset.continuous = continuous ? "1" : "0";
+  audio.playbackRate = currentProg.speed;
+  audio._countedItems = new Set();
+  audio._segStopped = false;
+  activeAudio = audio;
+
+  const it = currentItem() || {};
+  const segStart = Number.isFinite(offset) ? offset
+                 : (Number.isFinite(it.start) ? it.start : 0);
+  const segEnd   = Number.isFinite(it.end) ? it.end : null;
+
+  audio._lastTime = segStart;
+
+  audio.addEventListener("loadedmetadata", () => {
+    if(segStart > 0){ try{ audio.currentTime = segStart; }catch(e){} }
+  }, { once: true });
+
+  audio.addEventListener("timeupdate", () => {
+    const t = audio.currentTime;
+    const ex = currentEx();
+    if(!ex) { audio._lastTime = t; return; }
+
+    if(continuous){
+      // 1. Count crossed item ends (only on genuine forward progress)
+      const last = (audio._lastTime != null) ? audio._lastTime : t;
+      const forward = t > last && (t - last) < 1.5;
+      let repChanged = false;
+
+      if(forward){
+        for(let i = 0; i < ex.items.length; i++){
+          const xit = ex.items[i];
+          if(Number.isFinite(xit.end) && last < xit.end && t >= xit.end
+             && !audio._countedItems.has(i)){
+            audio._countedItems.add(i);
+            incrementRepForItemSilent(ex, xit);
+            repChanged = true;
+          }
+        }
+      }
+      audio._lastTime = t;
+
+      // 2. Auto-advance the item pointer
+      let idx = -1;
+      for(let i = ex.items.length - 1; i >= 0; i--){
+        const xit = ex.items[i];
+        if(Number.isFinite(xit.start) && t >= xit.start){ idx = i; break; }
+      }
+      if(idx === -1) idx = 0;
+
+      if(repChanged) saveDB();
+
+      if(idx !== currentProg.item){
+        currentProg.item = idx;
+        saveDB();
+        refreshItemUI();
+      }else if(repChanged){
+        refreshItemUI();
+      }
+    }else{
+      // Per-item playback: stop at the item's end time
+      if(segEnd != null && !audio._segStopped && t >= segEnd - 0.02){
+        audio._segStopped = true;
+        try{ audio.pause(); }catch(e){}
+        if(activeAudio === audio) incrementRep();
+      }
+      audio._lastTime = t;
+    }
+  });
+
+  audio.addEventListener("ended", () => {
+    updatePlayPauseUI();
+    if(continuous) return;  // auto-sync handles reps during the pass
+    if(audio._segStopped) return;
+    if(currentProg && (currentProg.mode === "chorus" || currentProg.mode === "shadow")) incrementRep();
+  });
+
+  audio.addEventListener("play",  updatePlayPauseUI);
+  audio.addEventListener("pause", updatePlayPauseUI);
+
+  audio.play()
+    .then(() => { visualizeElement(audio, mainCanvas, "#e0e0e6"); updatePlayPauseUI(); })
+    .catch(() => toast("The browser could not play this audio."));
+}
+
+function pausePlayback(){
+  let did = false;
+  if(activeAudio && !activeAudio.paused && !activeAudio.ended){
+    try{ activeAudio.pause(); }catch(e){}
+    did = true;
+  }
+  if(recordAudio && !recordAudio.paused && !recordAudio.ended){
+    try{ recordAudio.pause(); }catch(e){}
+    did = true;
+  }
+  updatePlayPauseUI();
+  if(!did) toast("Nothing is playing.");
+}
+
+function togglePlayPause(){
+  const playing = !!(activeAudio && !activeAudio.paused && !activeAudio.ended);
+  if(playing) pausePlayback();
+  else        playReference();
+}
+
+/* ---- ±5 second skipping ---- */
+function seekBy(delta){
+  const audio = activeAudio;
+  if(audio){
+    const dur = Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : Infinity;
+    const cur = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+    const next = Math.max(0, Math.min(dur - 0.05, cur + delta));
+    try{ audio.currentTime = next; }catch(e){}
+    audio._lastTime = next;
+
+    if(audio.dataset.continuous === "1"){
+      syncItemToTime(next);
+    }else{
+      const it = currentItem() || {};
+      if(Number.isFinite(it.end) && next < it.end - 0.05){
+        audio._segStopped = false;
+      }
+    }
+    return;
+  }
+  const src = getAudioSrc();
+  if(!src){ toast("No audio to seek."); return; }
+  playReference(delta > 0 ? delta : 0);
+}
+
+/* ---- bookmarks ---- */
+function addBookmark(){
+  const k = currentKey();
+  if(!k){ toast("No item selected."); return; }
+  if(!getAudioSrc()){ toast("No reference audio to bookmark — upload one first."); return; }
+
+  const t = (activeAudio && !activeAudio.ended && Number.isFinite(activeAudio.currentTime))
+    ? activeAudio.currentTime : 0;
+
+  if(!currentProg.bookmarks[k]) currentProg.bookmarks[k] = [];
+  const list = currentProg.bookmarks[k];
+
+  if(list.some(b => Math.abs(b - t) < 0.25)){
+    toast("Already bookmarked here.");
+    return;
+  }
+  list.push(Math.round(t * 100) / 100);
+  list.sort((a,b) => a - b);
+  saveDB();
+  renderBookmarks();
+  toast("Bookmark added at " + formatTime(t) + ".");
+}
+
+function renderBookmarks(){
+  const bar = document.getElementById("bookmarkBar");
+  if(!bar) return;
+  bar.innerHTML = "";
+  if(!currentProg) return;
+
+  const k = currentKey();
+  const list = (k && currentProg.bookmarks[k]) || [];
+  if(!list.length) return;
+
+  const label = document.createElement("span");
+  label.className = "bm-label";
+  label.textContent = "Bookmarks";
+  bar.appendChild(label);
+
+  list.forEach((t, i) => {
+    const el = document.createElement("button");
+    el.className = "bm";
+    el.title = "Play from " + formatTime(t);
+    el.innerHTML =
+      '<svg width="9" height="9" viewBox="0 0 12 12" fill="currentColor">' +
+        '<path d="M3 1.5h6a.5.5 0 01.5.5v8.6L6 8.3l-3.5 2.3V2a.5.5 0 01.5-.5z"/>' +
+      '</svg>' +
+      '<span>' + formatTime(t) + '</span>' +
+      '<span class="bm-x" data-x title="Remove">✕</span>';
+
+    el.addEventListener("click", ev => {
+      if(ev.target.closest("[data-x]")){
+        ev.stopPropagation();
+        const cur = currentProg.bookmarks[k] || [];
+        cur.splice(i, 1);
+        if(!cur.length) delete currentProg.bookmarks[k];
+        saveDB();
+        renderBookmarks();
+        return;
+      }
+      playReference(t);
+    });
+
+    bar.appendChild(el);
+  });
+}
+
+/* ---- browser voice ---- */
+function speakCurrent(){
+  const it = currentItem();
+  if(!it){ toast("No item selected."); return; }
+  if(!("speechSynthesis" in window)){ toast("No speech synthesis in this browser."); return; }
+  const raw = it.text.replace(/[/—–\-]/g, " ").replace(/\s+/g, " ").trim();
+  if(!raw) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(raw);
+  u.lang = "en-US"; u.rate = currentProg.speed;
+  const v = speechSynthesis.getVoices().find(x => /en[-_]US/i.test(x.lang));
+  if(v) u.voice = v;
+  speechSynthesis.speak(u);
+}
+
+/* ---- recording ---- */
+async function startRecording(){
+  if(mediaRecorder) return;
+  if(!currentItem()){ toast("No item selected."); return; }
+  if(!navigator.mediaDevices?.getUserMedia){
+    toast("Microphone recording is not supported in this browser.");
+    return;
+  }
+  try{
+    micStream = await navigator.mediaDevices.getUserMedia({audio: true});
+    let mime = "audio/webm";
+    if(!MediaRecorder.isTypeSupported(mime)) mime = "";
+    mediaRecorder = new MediaRecorder(micStream, mime ? {mimeType: mime} : undefined);
+    recordChunks = [];
+
+    mediaRecorder.ondataavailable = e => { if(e.data && e.data.size) recordChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      try{
+        const blob = new Blob(recordChunks, {type: mediaRecorder.mimeType || "audio/webm"});
+        const url = URL.createObjectURL(blob);
+        const ex = currentEx(), it = currentItem();
+        if(ex && it){
+          const k = ex.id + "::" + it.id;
+          const old = currentProg.recordings[k];
+          if(old && old.startsWith("blob:")){ try{ URL.revokeObjectURL(old); }catch(e){} }
+          currentProg.recordings[k] = url;
+          saveDB();
+          renderPractice();
+        }
+      }catch(e){ console.warn(e); toast("Could not save recording."); }
+      if(micStream){ micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+    };
+
+    mediaRecorder.start();
+    recordStart = Date.now();
+    clearInterval(recordTimer);
+    recordTimer = setInterval(updateRecordTime, 100);
+    setRecUI(true);
+    visualizeMic(micStream);
+  }catch(e){ toast("Microphone permission was not granted."); }
+}
+function stopRecording(){
+  if(!mediaRecorder) return;
+  try{ mediaRecorder.stop(); }catch(e){}
+  mediaRecorder = null;
+  clearInterval(recordTimer); recordTimer = null;
+  setRecUI(false);
+}
+function setRecUI(rec){
+  const btn = document.getElementById("recBtn");
+  if(rec){
+    btn.classList.add("recording");
+    btn.innerHTML = '<svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor"><rect x="1.5" y="1.5" width="9" height="9" rx="1.5"/></svg>Stop';
+    document.getElementById("recStatus").textContent = "Recording…";
+    document.getElementById("recStatus").classList.remove("saved");
+  }else{
+    btn.classList.remove("recording");
+    btn.innerHTML = '<svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor"><circle cx="6" cy="6" r="5"/></svg>Record';
+  }
+}
+function updateRecordTime(){
+  document.getElementById("recTime").textContent = formatTime((Date.now() - recordStart)/1000);
+}
+function visualizeMic(stream){
+  try{
+    const ctx = getAudioContext();
+    const src = ctx.createMediaStreamSource(stream);
+    const an = ctx.createAnalyser();
+    an.fftSize = 512;
+    src.connect(an);
+    const data = new Uint8Array(an.fftSize);
+    const canvas = recCanvas;
+    const c2d = canvas.getContext("2d");
+
+    function draw(){
+      if(!mediaRecorder){ drawIdleWave(canvas, "#4c4c57"); return; }
+      an.getByteTimeDomainData(data);
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      const dpr = window.devicePixelRatio || 1;
+      if(canvas.width !== w*dpr){ canvas.width = w*dpr; canvas.height = h*dpr; }
+      c2d.setTransform(dpr,0,0,dpr,0,0);
+      c2d.clearRect(0,0,w,h);
+
+      c2d.strokeStyle = "#2a2a32"; c2d.lineWidth = 1;
+      c2d.beginPath(); c2d.moveTo(0,h/2); c2d.lineTo(w,h/2); c2d.stroke();
+
+      c2d.strokeStyle = "#e58a8a"; c2d.lineWidth = 1.8;
+      c2d.beginPath();
+      const slice = w / (data.length - 1);
+      for(let i = 0; i < data.length; i++){
+        const x = i * slice;
+        const y = (data[i] / 255) * h;
+        if(i === 0) c2d.moveTo(x,y); else c2d.lineTo(x,y);
+      }
+      c2d.stroke();
+      requestAnimationFrame(draw);
+    }
+    draw();
+  }catch(e){}
+}
+
+function runMode(){
+  if(!currentItem()){ toast("No item selected."); return; }
+
+  // In continuous mode, always play the whole lesson audio.
+  if(isContinuousMode()){
+    if(currentProg.mode === "independent"){ startRecording(); return; }
+    playReference();
+    return;
+  }
+
+  if(currentProg.mode === "independent"){ startRecording(); return; }
+  if(!getAudioSrc()){ toast("No reference audio for this item — upload one or use Voice."); return; }
+  if(currentProg.mode === "chorus"){
+    playReference();
+    startRecording();
+  }else if(currentProg.mode === "shadow"){
+    playReference();
+    setTimeout(() => startRecording(), 350);
+  }
+}
+
+function incrementRep(){
+  const ex = currentEx(), it = currentItem();
+  if(!ex || !it) return;
+  const k = ex.id + "::" + it.id;
+  currentProg.repetitions[k] = (currentProg.repetitions[k] || 0) + 1;
+  if(currentProg.repetitions[k] >= currentPack.defaultRepetitions){
+    currentProg.completed[k] = true;
+  }
+  saveDB();
+  renderPractice();
+}
+
+/* ---- notes ---- */
+const notesArea = document.getElementById("notesArea");
+const notesStatus = document.getElementById("notesStatus");
+let notesTimer = null;
+
+function renderNotes(){
+  notesArea.value = currentProg ? (currentProg.notes || "") : "";
+}
+notesArea.addEventListener("input", () => {
+  if(!currentProg) return;
+  notesStatus.textContent = "Saving…";
+  notesStatus.classList.remove("saved");
+  clearTimeout(notesTimer);
+  notesTimer = setTimeout(() => {
+    currentProg.notes = notesArea.value;
+    saveDB();
+    notesStatus.textContent = "Saved ✓";
+    notesStatus.classList.add("saved");
+    setTimeout(() => { notesStatus.textContent = "Auto-saved"; notesStatus.classList.remove("saved"); }, 1500);
+  }, 400);
+});
+document.getElementById("notesFile").addEventListener("change", e => {
+  const f = e.target.files[0];
+  e.target.value = "";
+  if(!f || !currentProg) return;
+  if(currentProg.notes.trim() && !confirm("Replace your current notes with the contents of this file?")) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    currentProg.notes = String(ev.target.result || "");
+    saveDB();
+    renderNotes();
+    notesStatus.textContent = "Loaded ✓";
+    notesStatus.classList.add("saved");
+    toast("Notes loaded from " + f.name);
+  };
+  r.readAsText(f);
+});
+document.getElementById("clearNotesBtn").addEventListener("click", () => {
+  if(!currentProg || !currentProg.notes) return;
+  if(!confirm("Clear all notes for this pack?")) return;
+  currentProg.notes = "";
+  saveDB();
+  renderNotes();
+  toast("Notes cleared.");
+});
+
+/* ---- images ---- */
+function fileToDataURL(file){
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+function processImage(file){
+  return fileToDataURL(file).then(url => new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 1200;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      if(scale === 1 && file.size < 300*1024){ resolve(url); return; }
+      const c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(img.width * scale));
+      c.height = Math.max(1, Math.round(img.height * scale));
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = "#1d1d20";
+      ctx.fillRect(0,0,c.width,c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      resolve(c.toDataURL("image/jpeg", 0.82));
+    };
+    img.onerror = () => resolve(url);
+    img.src = url;
+  }));
+}
+function renderImages(){
+  const grid = document.getElementById("imgGrid");
+  grid.innerHTML = "";
+  if(!currentProg || !currentProg.images.length){
+    grid.innerHTML = '<div class="img-empty">No images yet — click <b>Add</b> to upload diagrams or screenshots.</div>';
+    return;
+  }
+  currentProg.images.forEach((im, idx) => {
+    const cell = document.createElement("div");
+    cell.className = "img-cell";
+    cell.innerHTML = '<img src="' + im.data + '" alt="' + escapeHtml(im.name) + '"><button class="del" title="Remove">✕</button>';
+    cell.querySelector("img").addEventListener("click", () => {
+      document.getElementById("lightboxImg").src = im.data;
+      document.getElementById("lightbox").classList.add("on");
+    });
+    cell.querySelector(".del").addEventListener("click", ev => {
+      ev.stopPropagation();
+      if(!confirm("Remove this image?")) return;
+      currentProg.images.splice(idx, 1);
+      saveDB();
+      renderImages();
+    });
+    grid.appendChild(cell);
+  });
+}
+document.getElementById("lightbox").addEventListener("click", () => {
+  document.getElementById("lightbox").classList.remove("on");
+  document.getElementById("lightboxImg").src = "";
+});
+document.getElementById("imageInput").addEventListener("change", async e => {
+  const files = [...e.target.files];
+  e.target.value = "";
+  if(!files.length || !currentProg) return;
+  let added = 0;
+  for(const f of files){
+    if(!f.type.startsWith("image/")) continue;
+    try{
+      const data = await processImage(f);
+      currentProg.images.push({ id: Date.now()+"-"+Math.random().toString(36).slice(2,7), name: f.name, data });
+      added++;
+    }catch(err){}
+  }
+  saveDB();
+  renderImages();
+  if(added) toast("Added " + plural(added, "image") + ".");
+});
+
+/* ============================================================================
+   PRACTICE EVENT WIRING
+   ============================================================================ */
+document.getElementById("backBtn").addEventListener("click", () => {
+  stopAllAudio();
+  if(mediaRecorder) stopRecording();
+  if(currentProg){ currentProg.lastVisit = Date.now(); saveDB(); }
+  currentPack = null;
+  currentProg = null;
+  showView("dashboard");
+  renderDashboard();
+});
+
+/* merged Play / Pause */
+document.getElementById("playPauseBtn").addEventListener("click", togglePlayPause);
+
+document.getElementById("stopBtn").addEventListener("click", stopAllAudio);
+document.getElementById("back5Btn").addEventListener("click", () => seekBy(-5));
+document.getElementById("fwd5Btn").addEventListener("click", () => seekBy(5));
+document.getElementById("bookmarkBtn").addEventListener("click", addBookmark);
+document.getElementById("speakBtn").addEventListener("click", speakCurrent);
+
+document.querySelectorAll("[data-mode]").forEach(b => {
+  b.addEventListener("click", () => {
+    if(!currentProg) return;
+    currentProg.mode = b.dataset.mode;
+    saveDB();
+    renderControls();
+  });
+});
+document.querySelectorAll("[data-speed]").forEach(b => {
+  b.addEventListener("click", () => {
+    if(!currentProg) return;
+    currentProg.speed = Number(b.dataset.speed);
+    if(activeAudio) activeAudio.playbackRate = currentProg.speed;
+    saveDB();
+    renderControls();
+  });
+});
+
+document.getElementById("recBtn").addEventListener("click", () => {
+  if(mediaRecorder) stopRecording();
+  else startRecording();
+});
+document.getElementById("playRecBtn").addEventListener("click", () => {
+  const ex = currentEx(), it = currentItem();
+  if(!ex || !it) return;
+  const src = currentProg.recordings[ex.id + "::" + it.id];
+  if(!src){ toast("No recording for this item."); return; }
+  if(recordAudio && !recordAudio.paused){ recordAudio.pause(); }
+  if(!recordAudio || recordAudio.src !== src){
+    recordAudio = new Audio(src);
+  }else{
+    try{ recordAudio.currentTime = 0; }catch(e){}
+  }
+  recordAudio.play().catch(() => toast("Could not play the recording."));
+});
+document.getElementById("clearRecBtn").addEventListener("click", () => {
+  const ex = currentEx(), it = currentItem();
+  if(!ex || !it) return;
+  const k = ex.id + "::" + it.id;
+  const src = currentProg.recordings[k];
+  if(!src) return;
+  if(src.startsWith("blob:")){ try{ URL.revokeObjectURL(src); }catch(e){} }
+  delete currentProg.recordings[k];
+  saveDB();
+  renderPractice();
+});
+
+document.getElementById("prevBtn").addEventListener("click", () => {
+  if(!currentPack) return;
+  if(currentProg.item > 0){
+    goToItem(currentProg.item - 1);
+  } else if(currentProg.exercise > 0){
+    stopAllAudio();
+    currentProg.exercise--;
+    currentProg.item = Math.max(0, currentPack.exercises[currentProg.exercise].items.length - 1);
+    saveDB();
+    renderPractice();
+  }
+});
+document.getElementById("nextBtn").addEventListener("click", () => {
+  if(!currentPack) return;
+  const ex = currentEx();
+  if(!ex) return;
+  if(currentProg.item < ex.items.length - 1){
+    goToItem(currentProg.item + 1);
+  } else if(currentProg.exercise < currentPack.exercises.length - 1){
+    stopAllAudio();
+    currentProg.exercise++;
+    currentProg.item = 0;
+    saveDB();
+    renderPractice();
+  }
+});
+document.getElementById("repeatBtn").addEventListener("click", runMode);
+
+document.getElementById("tabs").addEventListener("click", e => {
+  const btn = e.target.closest("[data-tab]");
+  if(!btn) return;
+  const name = btn.dataset.tab;
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab === name));
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.toggle("on", p.id === "panel-" + name));
+});
+
+/* item-level audio */
+document.getElementById("lessonAudioInput").addEventListener("change", e => {
+  const f = e.target.files[0];
+  e.target.value = "";
+  if(!f || !currentProg) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    const ex = currentEx(), it = currentItem();
+    if(!ex || !it) return;
+    currentProg.customAudio[ex.id + "::" + it.id] = ev.target.result;
+    saveDB();
+    toast("Audio loaded for this item.");
+    renderPackInfo();
+    renderPractice();
+  };
+  r.readAsDataURL(f);
+});
+
+/* exercise-level audio */
+document.getElementById("exerciseAudioInput").addEventListener("change", e => {
+  const f = e.target.files[0];
+  e.target.value = "";
+  if(!f || !currentPack || !currentProg) return;
+  const ex = currentEx();
+  if(!ex) return;
+
+  const MAX_PERSIST = 2.5 * 1024 * 1024;   // ~2.5 MB
+  const sk = exerciseSessionKey(ex.id);
+
+  if(f.size > MAX_PERSIST){
+    if(sessionExerciseAudio[sk] && sessionExerciseAudio[sk].startsWith("blob:")){
+      try{ URL.revokeObjectURL(sessionExerciseAudio[sk]); }catch(e){}
+    }
+    sessionExerciseAudio[sk] = URL.createObjectURL(f);
+    delete currentProg.exerciseAudio[ex.id];
+    saveDB();
+    toast("Large file — loaded for this session only (not saved).");
+    renderPackInfo();
+    renderPractice();
+    return;
+  }
+
+  const r = new FileReader();
+  r.onload = ev => {
+    currentProg.exerciseAudio[ex.id] = ev.target.result;
+    if(sessionExerciseAudio[sk]){
+      try{ URL.revokeObjectURL(sessionExerciseAudio[sk]); }catch(e){}
+      delete sessionExerciseAudio[sk];
+    }
+    saveDB();
+    toast('Audio loaded for exercise "' + ex.title + '" — auto-sync is on.');
+    renderPackInfo();
+    renderPractice();
+  };
+  r.readAsDataURL(f);
+});
+
+/* pack-level audio */
+document.getElementById("packAudioInput").addEventListener("change", e => {
+  const f = e.target.files[0];
+  e.target.value = "";
+  if(!f || !currentPack) return;
+
+  const MAX_PERSIST = 2.5 * 1024 * 1024;
+
+  if(f.size > MAX_PERSIST){
+    if(sessionAudio[currentPack.id] && sessionAudio[currentPack.id].startsWith("blob:")){
+      try{ URL.revokeObjectURL(sessionAudio[currentPack.id]); }catch(e){}
+    }
+    sessionAudio[currentPack.id] = URL.createObjectURL(f);
+    currentProg.packAudio = null;
+    saveDB();
+    toast("Large file — loaded for this session only (not saved).");
+    renderPackInfo();
+    renderPractice();
+    return;
+  }
+
+  const r = new FileReader();
+  r.onload = ev => {
+    currentProg.packAudio = ev.target.result;
+    if(sessionAudio[currentPack.id]){
+      try{ URL.revokeObjectURL(sessionAudio[currentPack.id]); }catch(e){}
+      delete sessionAudio[currentPack.id];
+    }
+    saveDB();
+    toast("Pack audio loaded.");
+    renderPackInfo();
+    renderPractice();
+  };
+  r.readAsDataURL(f);
+});
+
+/* SRT import → ONE exercise per SRT file */
+document.getElementById("srtInput").addEventListener("change", e => {
+  const f = e.target.files[0];
+  e.target.value = "";
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => importSrtToPack(String(ev.target.result || ""), f.name);
+  r.onerror = () => toast("Could not read that .srt file.");
+  r.readAsText(f);
+});
+
+document.getElementById("exportPackBtn").addEventListener("click", () => {
+  if(currentPack) exportPack(currentPack.id);
+});
+
+document.getElementById("resetPackBtn").addEventListener("click", () => {
+  if(!currentPack) return;
+  if(!confirm(`Reset all progress for "${currentPack.title}"?`)) return;
+  Object.values(currentProg.recordings || {}).forEach(u => {
+    if(u && u.startsWith("blob:")){ try{ URL.revokeObjectURL(u); }catch(e){} }
+  });
+  Object.keys(sessionExerciseAudio).forEach(k => {
+    if(k.startsWith(currentPack.id + "::")){
+      try{ URL.revokeObjectURL(sessionExerciseAudio[k]); }catch(e){}
+      delete sessionExerciseAudio[k];
+    }
+  });
+  DB.progress[currentPack.id] = freshProgress();
+  currentProg = DB.progress[currentPack.id];
+  stopAllAudio();
+  saveDB();
+  renderNotes(); renderImages(); renderPackInfo(); renderPractice();
+  toast("Progress reset.");
+});
+
+/* ============================================================================
+   DASHBOARD EVENT WIRING
+   ============================================================================ */
+document.getElementById("uploadBtn").addEventListener("click", openUploadModal);
+document.getElementById("templateBtn").addEventListener("click", downloadTemplate);
+document.getElementById("exportLibBtn").addEventListener("click", exportLibrary);
+
+document.getElementById("searchInput").addEventListener("input", e => {
+  dashState.search = e.target.value;
+  renderLibrary();
+});
+document.getElementById("sortSeg").addEventListener("click", e => {
+  const b = e.target.closest("[data-sort]");
+  if(!b) return;
+  dashState.sort = b.dataset.sort;
+  document.querySelectorAll("#sortSeg button").forEach(x => x.classList.toggle("on", x === b));
+  renderLibrary();
+});
+
+/* keyboard */
+document.addEventListener("keydown", e => {
+  const tag = document.activeElement.tagName;
+  if(["INPUT","TEXTAREA","SELECT"].includes(tag)) return;
+  if(!document.getElementById("viewPractice").classList.contains("active")) return;
+
+  if(e.code === "Space"){ e.preventDefault(); togglePlayPause(); }
+  if(e.key === "ArrowRight") document.getElementById("nextBtn").click();
+  if(e.key === "ArrowLeft")  document.getElementById("prevBtn").click();
+  if(e.key === "p" || e.key === "P") pausePlayback();
+  if(e.key === "b" || e.key === "B") addBookmark();
+  if(e.key === "," )  seekBy(-5);
+  if(e.key === "." )  seekBy(5);
+  if(e.key === "r" || e.key === "R"){
+    if(mediaRecorder) stopRecording();
+    else startRecording();
+  }
+  if(e.key === "Escape"){
+    if(document.getElementById("lightbox").classList.contains("on")){
+      document.getElementById("lightbox").classList.remove("on");
+      document.getElementById("lightboxImg").src = "";
+    }
+  }
+});
+
+window.addEventListener("resize", () => {
+  if(!activeAudio || activeAudio.paused) drawIdleWave(mainCanvas, "#4c4c57");
+  if(!mediaRecorder) drawIdleWave(recCanvas, "#4c4c57");
+});
+
+/* ============================================================================
+   SEED DEMO PACK (only on first ever visit)
+   ============================================================================ */
+function seedDemoPack(){
+  if(Object.keys(DB.packs).length > 0) return;
+
+  const demo = {
+    id: "demo-american-t",
+    title: "American English /t/",
+    target: "/t/",
+    description: "A small demo pack showing the JSON format. Delete it once you've imported your own.",
+    defaultRepetitions: 3,
+    exercises: [
+      {
+        id: "isolated", type: "isolated", title: "Isolated Sound",
+        description: "Release a clean, aspirated /t/. Tongue tip on the ridge, build up air, then let it go with a puff.",
+        items: [{ id: "t", text: "/t/", ipa: "/t/" }]
+      },
+      {
+        id: "words", type: "words", title: "Practice Words",
+        description: "Say each word clearly. Notice where /t/ appears in each one.",
+        items: [
+          { id: "table", text: "table", ipa: "/ˈtʰeɪ.bəl/" },
+          { id: "water", text: "water", ipa: "/ˈwɔː.ɾɚ/" },
+          { id: "cat",   text: "cat",   ipa: "/kʰæt̚/" },
+          { id: "button",text: "button",ipa: "/ˈbʌ.ʔn̩/" }
+        ]
+      },
+      {
+        id: "sentences", type: "sentences", title: "Sentences",
+        description: "Practice /t/ in all its allophones while keeping natural sentence rhythm.",
+        items: [
+          { id: "s1", text: "Take the time to get it right." },
+          { id: "s2", text: "I'd like a little bottle of water." }
+        ]
+      }
+    ]
+  };
+
+  const res = validatePack(demo);
+  if(res.pack){
+    DB.packs[res.pack.id] = { ...res.pack, importedAt: Date.now() };
+    saveDB();
+  }
+}
+
+/* ============================================================================
+   INIT
+   ============================================================================ */
+loadDB();
+seedDemoPack();
+renderDashboard();
+updatePlayPauseUI();
+requestAnimationFrame(() => {
+  drawIdleWave(mainCanvas, "#4c4c57");
+  drawIdleWave(recCanvas, "#4c4c57");
+});
+</script>
+</body>
+</html>
