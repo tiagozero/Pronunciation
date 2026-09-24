@@ -527,7 +527,7 @@ textarea.code::placeholder{color:var(--muted2)}
 
 .p-grid{
   display:grid;
-  grid-template-columns:236px minmax(0,1fr) 312px;
+  grid-template-columns:236px minmax(0,1fr);
   gap:1px;background:var(--line);
   flex:1;min-height:0;
 }
@@ -643,6 +643,11 @@ textarea.code::placeholder{color:var(--muted2)}
   margin-bottom:14px;
 }
 .transport-spacer{flex:1}
+.voice-sel{
+  background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);
+  padding:9px 10px;font-size:.8rem;color:var(--muted);max-width:170px;cursor:pointer;
+}
+.voice-sel:hover{border-color:var(--line2);color:var(--text)}
 .modes{display:flex;gap:5px;flex-wrap:wrap}
 .wave-main{height:96px;margin-bottom:10px}
 
@@ -903,7 +908,7 @@ input[type=file]{display:none}
    - two columns: player (left) | items (right)
    - Notes / Images / Info live in a hamburger menu + slide-over drawer
    ============================================================ */
-.menu-wrap,.ex-wrap,.drawer-close,.menu-scrim{display:none}
+.ex-wrap{display:none}
 .srt-mode{height:100vh;min-height:0}
 .srt-mode .p-grid{grid-template-columns:minmax(0,1fr)}
 .srt-mode .p-navcol{display:none}
@@ -932,7 +937,17 @@ input[type=file]{display:none}
 .srt-mode .target-stage{margin-top:16px}
 
 /* exercise switcher (next to the Library button) */
-.srt-mode .ex-wrap{display:block;position:relative;min-width:0}
+/* non-SRT exercises: cap the content width and centre it (the side columns are gone) */
+#viewPractice:not(.srt-mode) .p-center{
+  padding-left:max(16px,calc((100% - 940px) / 2));
+  padding-right:max(16px,calc((100% - 940px) / 2));
+}
+.nav-toggle{padding:9px 11px}
+.srt-mode .nav-toggle{display:none}
+.nav-toggle[aria-pressed="true"]{color:var(--text);border-color:var(--line2)}
+.nav-hidden .p-grid{grid-template-columns:minmax(0,1fr)}
+.nav-hidden .p-navcol{display:none}
+.srt-mode .ex-wrap,.nav-hidden .ex-wrap{display:block;position:relative;min-width:0}
 .ex-btn{max-width:260px;padding:8px 12px}
 .ex-btn .ex-cur{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .ex-btn .ex-pos{color:var(--muted);font-variant-numeric:tabular-nums;font-size:.76rem}
@@ -945,7 +960,7 @@ input[type=file]{display:none}
 .ex-list.on{display:block}
 
 /* hamburger menu */
-.srt-mode .menu-wrap{display:block;position:relative}
+.menu-wrap{display:block;position:relative}
 .menu-btn{padding:9px 11px}
 .menu-list{
   position:absolute;right:0;top:calc(100% + 8px);min-width:172px;
@@ -962,29 +977,29 @@ input[type=file]{display:none}
 .menu-list svg{color:var(--muted);flex:none}
 
 /* slide-over drawer (reuses the existing Notes / Images / Info aside) */
-.srt-mode .p-col.side{
+#viewPractice .p-col.side{
   position:fixed;top:0;right:0;bottom:0;width:min(400px,92vw);z-index:40;
   background:var(--bg);border-left:1px solid var(--line2);border-top:none;
   box-shadow:var(--shadow-lg);padding-top:20px;
   transform:translateX(100%);visibility:hidden;
   transition:transform .22s ease,visibility 0s linear .22s;
 }
-.srt-mode.menu-open .p-col.side{
+#viewPractice.menu-open .p-col.side{
   transform:none;visibility:visible;
   transition:transform .22s ease,visibility 0s;
 }
-.srt-mode .p-col.side .tabs{margin-right:42px}
-.srt-mode .drawer-close{
+#viewPractice .p-col.side .tabs{margin-right:42px}
+.drawer-close{
   display:grid;place-items:center;position:absolute;top:20px;right:20px;
   width:34px;height:34px;border-radius:9px;
   background:var(--panel2);border:1px solid var(--line);color:var(--muted);
 }
 .srt-mode .drawer-close:hover{color:var(--text);border-color:var(--line2)}
-.srt-mode .menu-scrim{
+.menu-scrim{
   position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.5);
   opacity:0;pointer-events:none;transition:opacity .22s;display:block;
 }
-.srt-mode.menu-open .menu-scrim{opacity:1;pointer-events:auto}
+.menu-open .menu-scrim{opacity:1;pointer-events:auto}
 
 @media(max-width:860px){
   .srt-mode{height:auto;min-height:100vh}
@@ -1100,6 +1115,9 @@ input[type=file]{display:none}
         <path d="M7.5 2.5L4 6l3.5 3.5"/>
       </svg>
       Library
+    </button>
+    <button class="btn nav-toggle" id="navToggle" aria-pressed="false" title="Hide exercise menu" aria-label="Hide or show the exercise menu">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="12" height="10" rx="1.6"/><path d="M6 3v10"/></svg>
     </button>
     <div class="ex-wrap" id="exWrap">
       <button class="btn ex-btn" id="exBtn" aria-haspopup="true" aria-expanded="false" title="Switch exercise">
@@ -1238,12 +1256,23 @@ input[type=file]{display:none}
           </svg>
           Bookmark
         </button>
-        <button class="btn" id="speakBtn" title="Use your browser's built-in voice">
+        <button class="btn" id="speakBtn" title="Speak this item (natural voice)">
           <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 6v4h2l3 3V3L5 6H3zM11 5.5a3 3 0 010 5M12.5 4a5 5 0 010 8"/>
           </svg>
           Voice
         </button>
+        <select class="voice-sel" id="voiceSel" title="Voice used by the Voice button" aria-label="Voice">
+          <option value="Joanna">Joanna · US female</option>
+          <option value="Matthew">Matthew · US male</option>
+          <option value="Salli">Salli · US female</option>
+          <option value="Kendra">Kendra · US female</option>
+          <option value="Joey">Joey · US male</option>
+          <option value="Justin">Justin · US male</option>
+          <option value="Amy">Amy · UK female</option>
+          <option value="Brian">Brian · UK male</option>
+          <option value="browser">Browser voice (offline)</option>
+        </select>
         <div class="transport-spacer"></div>
         <div class="modes">
           <button class="pill" data-mode="chorus">Chorus</button>
@@ -2501,7 +2530,6 @@ function renderPractice(){
   /* SRT lessons get the two-column layout + hamburger menu */
   const practiceView = document.getElementById("viewPractice");
   practiceView.classList.toggle("srt-mode", ex.type === "srt");
-  if(ex.type !== "srt") closeSideMenu();
 
   const wordEl = document.getElementById("targetWord");
   const wordTxt = item ? item.text : "—";
@@ -2929,6 +2957,7 @@ function updatePlayPauseUI(){
 }
 
 function stopAllAudio(){
+  if(typeof stopTTS === "function") stopTTS();
   if(activeAudio){ try{ activeAudio.pause(); activeAudio.currentTime = 0; }catch(e){} activeAudio = null; }
   if(recordAudio){ try{ recordAudio.pause(); recordAudio.currentTime = 0; }catch(e){} recordAudio = null; }
   if(activeRAF){ cancelAnimationFrame(activeRAF); activeRAF = null; }
@@ -3201,20 +3230,103 @@ function renderBookmarks(){
   });
 }
 
-/* ---- browser voice ---- */
-function speakCurrent(){
-  const it = currentItem();
-  if(!it){ toast("No item selected."); return; }
+/* ---- text-to-speech ----
+   1. Free online neural-quality voices (Amazon Polly voices through the
+      StreamElements public endpoint, no API key). Clips are cached, so
+      each item is downloaded only once.
+   2. If that is unreachable, fall back to the best voice the browser has
+      (natural / online voices are preferred over the robotic defaults). */
+const TTS_ENDPOINT = "https://api.streamelements.com/kappa/v2/speech";
+const ttsCache = new Map();          // "voice|text" -> blob URL
+let ttsAudio = null;
+
+function ttsVoiceChoice(){
+  try{ return localStorage.getItem("ttsVoice") || "Joanna"; }catch(e){ return "Joanna"; }
+}
+function stopTTS(){
+  if(ttsAudio){ try{ ttsAudio.pause(); }catch(e){} ttsAudio = null; }
+  if("speechSynthesis" in window) speechSynthesis.cancel();
+}
+async function fetchTTS(voice, text){
+  const key = voice + "|" + text;
+  if(ttsCache.has(key)) return ttsCache.get(key);
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 8000);
+  try{
+    const r = await fetch(TTS_ENDPOINT + "?voice=" + encodeURIComponent(voice) +
+                          "&text=" + encodeURIComponent(text), {signal: ctrl.signal});
+    if(!r.ok) throw new Error("TTS HTTP " + r.status);
+    const blob = await r.blob();
+    if(!blob.size || !/audio|mpeg|octet/i.test(blob.type || "audio")) throw new Error("TTS empty");
+    const url = URL.createObjectURL(blob);
+    ttsCache.set(key, url);
+    return url;
+  }finally{ clearTimeout(timer); }
+}
+
+function pickBrowserVoice(){
+  const vs = (window.speechSynthesis ? speechSynthesis.getVoices() : []).filter(v => /^en/i.test(v.lang));
+  if(!vs.length) return null;
+  const score = v => {
+    let n = 0;
+    if(/en[-_]US/i.test(v.lang)) n += 10;
+    if(/natural|neural/i.test(v.name)) n += 50;            // Edge / Windows natural voices
+    if(/online/i.test(v.name)) n += 30;
+    if(/premium|enhanced/i.test(v.name)) n += 25;          // macOS / iOS
+    if(/google/i.test(v.name)) n += 20;
+    if(/aria|jenny|guy|samantha|ava|allison|zoe/i.test(v.name)) n += 15;
+    if(!v.localService) n += 5;
+    return n;
+  };
+  return vs.sort((a, b) => score(b) - score(a))[0];
+}
+function speakWithBrowser(text){
   if(!("speechSynthesis" in window)){ toast("No speech synthesis in this browser."); return; }
-  const raw = it.text.replace(/[/—–\-]/g, " ").replace(/\s+/g, " ").trim();
-  if(!raw) return;
   speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(raw);
+  const u = new SpeechSynthesisUtterance(text);
   u.lang = "en-US"; u.rate = currentProg.speed;
-  const v = speechSynthesis.getVoices().find(x => /en[-_]US/i.test(x.lang));
-  if(v) u.voice = v;
+  const v = pickBrowserVoice();
+  if(v){ u.voice = v; u.lang = v.lang; }
   speechSynthesis.speak(u);
 }
+
+async function speakCurrent(){
+  const it = currentItem();
+  if(!it){ toast("No item selected."); return; }
+  const raw = it.text.replace(/[/—–\-]/g, " ").replace(/\s+/g, " ").trim().slice(0, 500);
+  if(!raw) return;
+
+  stopTTS();
+  const voice = ttsVoiceChoice();
+  if(voice === "browser"){ speakWithBrowser(raw); return; }
+
+  const btn = document.getElementById("speakBtn");
+  btn.disabled = true;
+  try{
+    const url = await fetchTTS(voice, raw);
+    const a = new Audio(url);
+    a.preservesPitch = true;
+    a.playbackRate = currentProg.speed;
+    ttsAudio = a;
+    await a.play();
+  }catch(err){
+    console.warn("Online TTS unavailable, using browser voice:", err);
+    toast("Online voice unavailable — using your browser voice.");
+    speakWithBrowser(raw);
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+/* voice picker */
+const voiceSel = document.getElementById("voiceSel");
+voiceSel.value = ttsVoiceChoice();
+if(voiceSel.value !== ttsVoiceChoice()) voiceSel.value = "Joanna";
+voiceSel.addEventListener("change", () => {
+  try{ localStorage.setItem("ttsVoice", voiceSel.value); }catch(e){}
+  speakCurrent();                                        // instant preview
+});
+if("speechSynthesis" in window) speechSynthesis.getVoices();   // warm up the voice list
 
 /* ---- recording ---- */
 async function startRecording(){
@@ -3577,7 +3689,19 @@ document.getElementById("tabs").addEventListener("click", e => {
   document.querySelectorAll(".tab-panel").forEach(p => p.classList.toggle("on", p.id === "panel-" + name));
 });
 
-/* ---- SRT layout: hamburger menu + slide-over drawer ---- */
+/* ---- hide / show the left exercise menu ---- */
+const navToggle = document.getElementById("navToggle");
+function setNavHidden(hidden){
+  document.getElementById("viewPractice").classList.toggle("nav-hidden", hidden);
+  navToggle.setAttribute("aria-pressed", String(hidden));
+  navToggle.title = hidden ? "Show exercise menu" : "Hide exercise menu";
+  try{ localStorage.setItem("pNavHidden", hidden ? "1" : "0"); }catch(e){}
+}
+navToggle.addEventListener("click", () =>
+  setNavHidden(!document.getElementById("viewPractice").classList.contains("nav-hidden")));
+try{ if(localStorage.getItem("pNavHidden") === "1") setNavHidden(true); }catch(e){}
+
+/* ---- hamburger menu (Notes / Images / Info) + slide-over drawer ---- */
 const menuBtn  = document.getElementById("menuBtn");
 const menuList = document.getElementById("menuList");
 function closeMenuList(){
