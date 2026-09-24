@@ -898,6 +898,105 @@ input[type=file]{display:none}
 }
 
 /* ============================================================
+   SRT LAYOUT  (applied when the open exercise is an SRT lesson)
+   - no lateral exercise menu
+   - two columns: player (left) | items (right)
+   - Notes / Images / Info live in a hamburger menu + slide-over drawer
+   ============================================================ */
+.menu-wrap,.ex-wrap,.drawer-close,.menu-scrim{display:none}
+.srt-mode{height:100vh;min-height:0}
+.srt-mode .p-grid{grid-template-columns:minmax(0,1fr)}
+.srt-mode .p-navcol{display:none}
+
+.srt-mode .p-center{
+  display:grid;padding:0;overflow:hidden;
+  grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr);
+  grid-template-rows:minmax(0,1fr) auto;
+}
+.srt-mode .srt-left{grid-column:1;grid-row:1;overflow-y:auto;padding:22px;min-width:0}
+.srt-mode .srt-right{
+  grid-column:2;grid-row:1 / span 2;overflow-y:auto;min-width:0;
+  padding:0 22px 22px;border-left:1px solid var(--line);background:var(--bg2);
+}
+.srt-mode .foot-row{
+  grid-column:1;grid-row:2;margin:0;padding:14px 22px;
+  border-top:1px solid var(--line);
+}
+.srt-mode .items-head{
+  margin:0 0 4px;position:sticky;top:0;z-index:2;
+  padding:22px 0 10px;background:var(--bg2);
+}
+.srt-mode .chip-grid{grid-template-columns:1fr}
+.srt-mode .chip{padding:10px 30px 10px 12px}
+.srt-mode .chip-word{white-space:normal;overflow:visible;font-size:.95rem;line-height:1.35}
+.srt-mode .target-stage{margin-top:16px}
+
+/* exercise switcher (next to the Library button) */
+.srt-mode .ex-wrap{display:block;position:relative;min-width:0}
+.ex-btn{max-width:260px;padding:8px 12px}
+.ex-btn .ex-cur{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.ex-btn .ex-pos{color:var(--muted);font-variant-numeric:tabular-nums;font-size:.76rem}
+.ex-btn svg{flex:none;color:var(--muted)}
+.ex-list{
+  position:absolute;left:0;top:calc(100% + 8px);width:300px;max-width:90vw;max-height:60vh;overflow-y:auto;
+  background:var(--panel);border:1px solid var(--line2);border-radius:var(--r);
+  box-shadow:var(--shadow);padding:5px;display:none;z-index:50;
+}
+.ex-list.on{display:block}
+
+/* hamburger menu */
+.srt-mode .menu-wrap{display:block;position:relative}
+.menu-btn{padding:9px 11px}
+.menu-list{
+  position:absolute;right:0;top:calc(100% + 8px);min-width:172px;
+  background:var(--panel);border:1px solid var(--line2);border-radius:var(--r);
+  box-shadow:var(--shadow);padding:5px;display:none;z-index:50;
+}
+.menu-list.on{display:block}
+.menu-list button{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  background:transparent;border:none;color:var(--text);
+  padding:9px 11px;border-radius:8px;font-size:.84rem;
+}
+.menu-list button:hover,.menu-list button:focus-visible{background:var(--panel3);outline:none}
+.menu-list svg{color:var(--muted);flex:none}
+
+/* slide-over drawer (reuses the existing Notes / Images / Info aside) */
+.srt-mode .p-col.side{
+  position:fixed;top:0;right:0;bottom:0;width:min(400px,92vw);z-index:40;
+  background:var(--bg);border-left:1px solid var(--line2);border-top:none;
+  box-shadow:var(--shadow-lg);padding-top:20px;
+  transform:translateX(100%);visibility:hidden;
+  transition:transform .22s ease,visibility 0s linear .22s;
+}
+.srt-mode.menu-open .p-col.side{
+  transform:none;visibility:visible;
+  transition:transform .22s ease,visibility 0s;
+}
+.srt-mode .p-col.side .tabs{margin-right:42px}
+.srt-mode .drawer-close{
+  display:grid;place-items:center;position:absolute;top:20px;right:20px;
+  width:34px;height:34px;border-radius:9px;
+  background:var(--panel2);border:1px solid var(--line);color:var(--muted);
+}
+.srt-mode .drawer-close:hover{color:var(--text);border-color:var(--line2)}
+.srt-mode .menu-scrim{
+  position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.5);
+  opacity:0;pointer-events:none;transition:opacity .22s;display:block;
+}
+.srt-mode.menu-open .menu-scrim{opacity:1;pointer-events:auto}
+
+@media(max-width:860px){
+  .srt-mode{height:auto;min-height:100vh}
+  .srt-mode .p-center{display:block;overflow:visible}
+  .srt-mode .srt-left{overflow:visible;padding:16px}
+  .srt-mode .srt-right{overflow:visible;padding:0 16px 16px}
+  .srt-mode .srt-right{border-left:none;border-top:1px solid var(--line)}
+  .srt-mode .items-head{position:static;padding-top:0}
+  .srt-mode .foot-row{padding:14px 16px}
+}
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 @media(max-width:1180px){
@@ -1002,6 +1101,14 @@ input[type=file]{display:none}
       </svg>
       Library
     </button>
+    <div class="ex-wrap" id="exWrap">
+      <button class="btn ex-btn" id="exBtn" aria-haspopup="true" aria-expanded="false" title="Switch exercise">
+        <span class="ex-pos" id="exPos">1/1</span>
+        <span class="ex-cur" id="exCur">Exercise</span>
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5L6 8l3.5-3.5"/></svg>
+      </button>
+      <div class="ex-list" id="exList" role="menu"></div>
+    </div>
     <div class="p-logo" id="pLogo">/—/</div>
     <div style="min-width:0">
       <div class="p-title" id="pTitle">—</div>
@@ -1046,12 +1153,31 @@ input[type=file]{display:none}
       </button>
       <div class="p-divider"></div>
       <button class="btn ghost" id="resetPackBtn">Reset</button>
+      <div class="menu-wrap" id="menuWrap">
+        <button class="btn menu-btn" id="menuBtn" aria-label="Notes, images and info" aria-haspopup="true" aria-expanded="false" title="Notes, images and info">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M2.5 4h11M2.5 8h11M2.5 12h11"/></svg>
+        </button>
+        <div class="menu-list" id="menuList" role="menu">
+          <button role="menuitem" data-open-tab="notes">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 2h6.5l2.5 2.5V14h-9zM5.5 7h5M5.5 10h5"/></svg>
+            Notes
+          </button>
+          <button role="menuitem" data-open-tab="images">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="12" height="10" rx="1.5"/><circle cx="6" cy="7" r="1.2"/><path d="M2.5 12l3.5-3 3 2.5 2-1.5 2.5 2"/></svg>
+            Images
+          </button>
+          <button role="menuitem" data-open-tab="guide">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 7.5V11M8 5v.01"/></svg>
+            Info
+          </button>
+        </div>
+      </div>
     </div>
   </header>
 
   <div class="p-grid">
     <!-- LEFT -->
-    <aside class="p-col">
+    <aside class="p-col p-navcol">
       <div class="prog-wrap">
         <div class="ring" id="ring" style="--pct:0%">
           <span id="ringPct">0%</span>
@@ -1063,7 +1189,8 @@ input[type=file]{display:none}
     </aside>
 
     <!-- CENTER -->
-    <main class="p-col">
+    <main class="p-col p-center">
+      <div class="srt-left">
       <div class="practice-head">
         <div style="min-width:0">
           <div class="tag" id="exTag">Exercise</div>
@@ -1157,11 +1284,15 @@ input[type=file]{display:none}
         <div class="wave wave-rec"><canvas id="recWaveform"></canvas></div>
       </div>
 
+      </div><!-- /srt-left -->
+
+      <div class="srt-right">
       <div class="items-head">
         <div class="tag" id="itemsTag">Items</div>
         <span class="badge" id="itemsCount">0 / 0 done</span>
       </div>
       <div class="chip-grid" id="chipGrid"></div>
+      </div><!-- /srt-right -->
 
       <div class="foot-row">
         <button class="btn" id="prevBtn">
@@ -1190,7 +1321,10 @@ input[type=file]{display:none}
     </main>
 
     <!-- RIGHT -->
-    <aside class="p-col side">
+    <aside class="p-col side" id="sideDrawer">
+      <button class="drawer-close" id="drawerClose" aria-label="Close panel">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg>
+      </button>
       <div class="tabs" id="tabs">
         <button data-tab="notes" class="on">Notes</button>
         <button data-tab="images">Images</button>
@@ -1235,6 +1369,7 @@ input[type=file]{display:none}
       </div>
     </aside>
   </div>
+  <div class="menu-scrim" id="menuScrim"></div>
 </div>
 
 
@@ -2363,6 +2498,11 @@ function renderPractice(){
   const itemAudioLabel = document.getElementById("itemAudioLabel");
   if(itemAudioLabel) itemAudioLabel.style.display = (ex.type === "srt") ? "none" : "";
 
+  /* SRT lessons get the two-column layout + hamburger menu */
+  const practiceView = document.getElementById("viewPractice");
+  practiceView.classList.toggle("srt-mode", ex.type === "srt");
+  if(ex.type !== "srt") closeSideMenu();
+
   const wordEl = document.getElementById("targetWord");
   const wordTxt = item ? item.text : "—";
   wordEl.textContent = wordTxt;
@@ -2460,10 +2600,20 @@ function updateChipsLight(){
     }
   });
 
+  /* SRT layout: keep the active line visible in the scrollable items column */
+  const activeChip = grid.querySelector(".chip.active");
+  const scrollKey = ex.id + "::" + currentProg.item;
+  if(activeChip && window.__lastChipScroll !== scrollKey &&
+     document.getElementById("viewPractice").classList.contains("srt-mode")){
+    window.__lastChipScroll = scrollKey;
+    activeChip.scrollIntoView({block:"nearest", behavior:"smooth"});
+  }
+
   const doneCount = ex.items.filter(it => currentProg.completed[ex.id + "::" + it.id]).length;
   const itemsCountEl = document.getElementById("itemsCount");
   if(itemsCountEl) itemsCountEl.textContent = doneCount + " / " + ex.items.length + " done";
 
+  renderExSwitcher();
   const navItems = document.querySelectorAll("#pNav .p-nav-item");
   const navEl = navItems[currentProg.exercise];
   if(navEl){
@@ -2560,7 +2710,42 @@ function goToItem(idx){
   }
 }
 
+function renderExSwitcher(){
+  const list = document.getElementById("exList");
+  if(!list || !currentPack || !currentProg) return;
+  list.innerHTML = "";
+  currentPack.exercises.forEach((ex, i) => {
+    const total = ex.items.length;
+    const done = ex.items.filter(it => currentProg.completed[ex.id + "::" + it.id]).length;
+    const complete = total > 0 && done === total;
+    const b = document.createElement("button");
+    b.className = "p-nav-item";
+    b.setAttribute("role", "menuitem");
+    if(i === currentProg.exercise) b.classList.add("active");
+    if(complete) b.classList.add("done");
+    b.innerHTML =
+      '<span class="num">' + (i + 1) + '</span>' +
+      '<span class="lbl">' + escapeHtml(ex.title) + '</span>' +
+      '<span class="meta">' + (complete ? "✓" : done + "/" + total) + '</span>';
+    b.addEventListener("click", () => {
+      closeExList();
+      if(i === currentProg.exercise) return;
+      stopAllAudio();
+      currentProg.exercise = i;
+      currentProg.item = 0;
+      saveDB();
+      renderPractice();
+    });
+    list.appendChild(b);
+  });
+  const cur = currentPack.exercises[currentProg.exercise];
+  document.getElementById("exCur").textContent = cur ? cur.title : "Exercise";
+  document.getElementById("exPos").textContent =
+    (currentProg.exercise + 1) + "/" + currentPack.exercises.length;
+}
+
 function renderNav(){
+  renderExSwitcher();
   const nav = document.getElementById("pNav");
   nav.innerHTML = "";
   currentPack.exercises.forEach((ex, i) => {
@@ -3377,6 +3562,60 @@ document.getElementById("tabs").addEventListener("click", e => {
   const name = btn.dataset.tab;
   document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab === name));
   document.querySelectorAll(".tab-panel").forEach(p => p.classList.toggle("on", p.id === "panel-" + name));
+});
+
+/* ---- SRT layout: hamburger menu + slide-over drawer ---- */
+const menuBtn  = document.getElementById("menuBtn");
+const menuList = document.getElementById("menuList");
+function closeMenuList(){
+  menuList.classList.remove("on");
+  menuBtn.setAttribute("aria-expanded","false");
+}
+const exBtn  = document.getElementById("exBtn");
+const exList = document.getElementById("exList");
+function closeExList(){
+  exList.classList.remove("on");
+  exBtn.setAttribute("aria-expanded","false");
+}
+exBtn.addEventListener("click", e => {
+  e.stopPropagation();
+  closeMenuList();
+  const open = !exList.classList.contains("on");
+  exList.classList.toggle("on", open);
+  exBtn.setAttribute("aria-expanded", String(open));
+  if(open){
+    const a = exList.querySelector(".active");
+    if(a) a.scrollIntoView({block:"nearest"});
+  }
+});
+function closeSideMenu(){
+  closeExList();
+  closeMenuList();
+  document.getElementById("viewPractice").classList.remove("menu-open");
+}
+menuBtn.addEventListener("click", e => {
+  e.stopPropagation();
+  closeExList();
+  const open = !menuList.classList.contains("on");
+  menuList.classList.toggle("on", open);
+  menuBtn.setAttribute("aria-expanded", String(open));
+});
+menuList.addEventListener("click", e => {
+  const b = e.target.closest("[data-open-tab]");
+  if(!b) return;
+  const tab = document.querySelector('#tabs [data-tab="' + b.dataset.openTab + '"]');
+  if(tab) tab.click();
+  closeMenuList();
+  document.getElementById("viewPractice").classList.add("menu-open");
+});
+document.addEventListener("click", e => {
+  if(!e.target.closest("#menuWrap")) closeMenuList();
+  if(!e.target.closest("#exWrap")) closeExList();
+});
+document.getElementById("drawerClose").addEventListener("click", closeSideMenu);
+document.getElementById("menuScrim").addEventListener("click", closeSideMenu);
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape") closeSideMenu();
 });
 
 /* item-level audio */
