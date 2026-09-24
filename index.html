@@ -1263,15 +1263,15 @@ input[type=file]{display:none}
           Voice
         </button>
         <select class="voice-sel" id="voiceSel" title="Voice used by the Voice button" aria-label="Voice">
-          <option value="Joanna">Joanna · US female</option>
-          <option value="Matthew">Matthew · US male</option>
-          <option value="Salli">Salli · US female</option>
-          <option value="Kendra">Kendra · US female</option>
-          <option value="Joey">Joey · US male</option>
-          <option value="Justin">Justin · US male</option>
-          <option value="Amy">Amy · UK female</option>
-          <option value="Brian">Brian · UK male</option>
+          <option value="gt">Google voice · free, no setup</option>
+          <optgroup label="Google Cloud (free monthly quota, needs API key)">
+            <option value="gc:en-US-Neural2-F">Neural2 · US female</option>
+            <option value="gc:en-US-Neural2-D">Neural2 · US male</option>
+            <option value="gc:en-GB-Neural2-A">Neural2 · UK female</option>
+            <option value="gc:en-GB-Neural2-B">Neural2 · UK male</option>
+          </optgroup>
           <option value="browser">Browser voice (offline)</option>
+          <option value="key">⚙ Set Google Cloud API key…</option>
         </select>
         <div class="transport-spacer"></div>
         <div class="modes">
@@ -3231,39 +3231,116 @@ function renderBookmarks(){
 }
 
 /* ---- text-to-speech ----
-   1. Free online neural-quality voices (Amazon Polly voices through the
-      StreamElements public endpoint, no API key). Clips are cached, so
-      each item is downloaded only once.
-   2. If that is unreachable, fall back to the best voice the browser has
-      (natural / online voices are preferred over the robotic defaults). */
-const TTS_ENDPOINT = "https://api.streamelements.com/kappa/v2/speech";
+   Voice chain (each step falls back to the next):
+   1. Google Cloud Text-to-Speech Neural2 voices - best quality; needs a free
+      API key (Google gives a monthly free quota). Key stays in this browser.
+   2. Google's free translate voice - no key, no setup (unofficial endpoint,
+      played through an <audio> element; long text is split into chunks).
+   3. The best voice installed in the browser. */
 const ttsCache = new Map();          // "voice|text" -> blob URL
 let ttsAudio = null;
+let ttsRun = 0;                      // cancels chunk queues when a new request starts
 
-function ttsVoiceChoice(){
-  try{ return localStorage.getItem("ttsVoice") || "Joanna"; }catch(e){ return "Joanna"; }
+function ttsChoice(){
+  let v = "gt";
+  try{ v = localStorage.getItem("ttsVoice") || "gt"; }catch(e){}
+  return [...document.querySelectorAll("#voiceSel option")].some(o => o.value === v && v !== "key") ? v : "gt";
 }
+function gcKey(){ try{ return localStorage.getItem("gcTtsKey") || ""; }catch(e){ return ""; } }
+function askGcKey(){
+  const k = prompt(
+    "Paste your Google Cloud Text-to-Speech API key.\n\n" +
+    "Get one: Google Cloud Console → enable “Cloud Text-to-Speech API” → APIs & Services → Credentials → Create API key.\n" +
+    "It is stored only in this browser. Leave empty to remove it.", gcKey());
+  if(k === null) return gcKey();
+  try{ k.trim() ? localStorage.setItem("gcTtsKey", k.trim()) : localStorage.removeItem("gcTtsKey"); }catch(e){}
+  return gcKey();
+}
+
 function stopTTS(){
+  ttsRun++;
   if(ttsAudio){ try{ ttsAudio.pause(); }catch(e){} ttsAudio = null; }
   if("speechSynthesis" in window) speechSynthesis.cancel();
 }
-async function fetchTTS(voice, text){
-  const key = voice + "|" + text;
-  if(ttsCache.has(key)) return ttsCache.get(key);
+
+/* play one audio URL; resolves once playback has started, rejects if it cannot */
+async function playTTSUrl(url, run, onEnd){
+  const a = new Audio(url);
+  a.preservesPitch = true;
+  a.playbackRate = currentProg.speed;
+  if(onEnd) a.addEventListener("ended", onEnd);
+  if(run !== ttsRun) return;
+  ttsAudio = a;
+  await a.play();
+}
+
+/* -- Google Cloud TTS (key) -- */
+async function fetchGoogleCloud(voiceName, text, key){
+  const ck = voiceName + "|" + text;
+  if(ttsCache.has(ck)) return ttsCache.get(ck);
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 8000);
+  const timer = setTimeout(() => ctrl.abort(), 10000);
   try{
-    const r = await fetch(TTS_ENDPOINT + "?voice=" + encodeURIComponent(voice) +
-                          "&text=" + encodeURIComponent(text), {signal: ctrl.signal});
-    if(!r.ok) throw new Error("TTS HTTP " + r.status);
-    const blob = await r.blob();
-    if(!blob.size || !/audio|mpeg|octet/i.test(blob.type || "audio")) throw new Error("TTS empty");
-    const url = URL.createObjectURL(blob);
-    ttsCache.set(key, url);
+    const r = await fetch("https://texttospeech.googleapis.com/v1/text:synthesize?key=" + encodeURIComponent(key), {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        input: {text},
+        voice: {languageCode: voiceName.split("-").slice(0, 2).join("-"), name: voiceName},
+        audioConfig: {audioEncoding: "MP3"}
+      }),
+      signal: ctrl.signal
+    });
+    if(!r.ok){
+      let msg = "";
+      try{ msg = (await r.json()).error.message; }catch(e){}
+      const err = new Error("Google Cloud TTS " + r.status + (msg ? ": " + msg : ""));
+      err.status = r.status;
+      throw err;
+    }
+    const j = await r.json();
+    const bin = atob(j.audioContent);
+    const bytes = new Uint8Array(bin.length);
+    for(let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const url = URL.createObjectURL(new Blob([bytes], {type: "audio/mpeg"}));
+    ttsCache.set(ck, url);
     return url;
   }finally{ clearTimeout(timer); }
 }
 
+/* -- Google translate voice (free, keyless) -- */
+function splitForTTS(text, max = 180){
+  const parts = text.match(/[^.!?;:,]+[.!?;:,]*\s*/g) || [text];
+  const out = [];
+  let cur = "";
+  for(const part of parts){
+    if((cur + part).length > max && cur){ out.push(cur.trim()); cur = ""; }
+    if(part.length > max){
+      part.split(/\s+/).forEach(w => {
+        if((cur + " " + w).length > max && cur){ out.push(cur.trim()); cur = ""; }
+        cur += " " + w;
+      });
+    }else cur += part;
+  }
+  if(cur.trim()) out.push(cur.trim());
+  return out;
+}
+function googleFreeUrl(chunk, i, n){
+  return "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-US" +
+         "&total=" + n + "&idx=" + i + "&textlen=" + chunk.length +
+         "&q=" + encodeURIComponent(chunk);
+}
+async function playGoogleFree(text, run){
+  const chunks = splitForTTS(text);
+  const playAt = async i => {
+    if(run !== ttsRun || i >= chunks.length) return;
+    await playTTSUrl(googleFreeUrl(chunks[i], i, chunks.length), run,
+                     () => playAt(i + 1).catch(() => {}));
+  };
+  await playAt(0);
+}
+
+/* -- browser voice -- */
 function pickBrowserVoice(){
   const vs = (window.speechSynthesis ? speechSynthesis.getVoices() : []).filter(v => /^en/i.test(v.lang));
   if(!vs.length) return null;
@@ -3297,22 +3374,38 @@ async function speakCurrent(){
   if(!raw) return;
 
   stopTTS();
-  const voice = ttsVoiceChoice();
-  if(voice === "browser"){ speakWithBrowser(raw); return; }
+  const run = ttsRun;
+  const choice = ttsChoice();
+  if(choice === "browser"){ speakWithBrowser(raw); return; }
 
   const btn = document.getElementById("speakBtn");
   btn.disabled = true;
   try{
-    const url = await fetchTTS(voice, raw);
-    const a = new Audio(url);
-    a.preservesPitch = true;
-    a.playbackRate = currentProg.speed;
-    ttsAudio = a;
-    await a.play();
-  }catch(err){
-    console.warn("Online TTS unavailable, using browser voice:", err);
-    toast("Online voice unavailable — using your browser voice.");
-    speakWithBrowser(raw);
+    if(choice.startsWith("gc:")){
+      const key = gcKey();
+      if(key){
+        try{
+          const url = await fetchGoogleCloud(choice.slice(3), raw, key);
+          await playTTSUrl(url, run);
+          return;
+        }catch(err){
+          console.warn(err);
+          toast((err.status === 400 || err.status === 403)
+            ? "Google Cloud rejected the request (check the API key / enable the Text-to-Speech API). Using the free voice."
+            : "Google Cloud voice failed. Using the free voice.");
+        }
+      }else{
+        toast("Add a Google Cloud API key for this voice. Using the free voice.");
+      }
+    }
+    if(run !== ttsRun) return;
+    try{
+      await playGoogleFree(raw, run);
+    }catch(err){
+      console.warn("Free online voice unavailable:", err);
+      toast("Online voice unavailable — using your browser voice.");
+      speakWithBrowser(raw);
+    }
   }finally{
     btn.disabled = false;
   }
@@ -3320,10 +3413,22 @@ async function speakCurrent(){
 
 /* voice picker */
 const voiceSel = document.getElementById("voiceSel");
-voiceSel.value = ttsVoiceChoice();
-if(voiceSel.value !== ttsVoiceChoice()) voiceSel.value = "Joanna";
+voiceSel.value = ttsChoice();
 voiceSel.addEventListener("change", () => {
+  if(voiceSel.value === "key"){
+    voiceSel.value = ttsChoice();
+    if(askGcKey() && !ttsChoice().startsWith("gc:")){
+      voiceSel.value = "gc:en-US-Neural2-F";
+      try{ localStorage.setItem("ttsVoice", voiceSel.value); }catch(e){}
+      speakCurrent();
+    }
+    return;
+  }
   try{ localStorage.setItem("ttsVoice", voiceSel.value); }catch(e){}
+  if(voiceSel.value.startsWith("gc:") && !gcKey() && !askGcKey()){
+    voiceSel.value = "gt";
+    try{ localStorage.setItem("ttsVoice", "gt"); }catch(e){}
+  }
   speakCurrent();                                        // instant preview
 });
 if("speechSynthesis" in window) speechSynthesis.getVoices();   // warm up the voice list
