@@ -1307,26 +1307,60 @@ let DB = {
   meta: { createdAt: Date.now() }
 };
 
+const IDB_NAME  = "pronunciation-dashboard-db";
+const IDB_STORE = "kv";
+
+let _idbPromise = null;
+function openIDB(){
+  if(_idbPromise) return _idbPromise;
+  _idbPromise = new Promise((resolve, reject) => {
+    if(!window.indexedDB){ reject(new Error("IndexedDB not supported")); return; }
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return _idbPromise;
+}
+function idbGet(key){
+  return openIDB().then(db => new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, "readonly");
+    const req = tx.objectStore(IDB_STORE).get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  }));
+}
+function idbSet(key, value){
+  return openIDB().then(db => new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, "readwrite");
+    const req = tx.objectStore(IDB_STORE).put(value, key);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  }));
+}
+
 function loadDB(){
-  try{
-    const raw = localStorage.getItem(DB_KEY);
-    if(raw){
-      const saved = JSON.parse(raw);
+  return idbGet(DB_KEY).then(saved => {
+    if(saved){
       DB = {
         packs:    saved.packs    || {},
         progress: saved.progress || {},
         meta:     saved.meta     || { createdAt: Date.now() }
       };
     }
-  }catch(e){ console.warn("Could not load database", e); }
+  }).catch(e => { console.warn("Could not load database", e); });
 }
 function saveDB(){
-  try{
-    localStorage.setItem(DB_KEY, JSON.stringify(DB));
-  }catch(e){
+  let snapshot;
+  try{ snapshot = JSON.parse(JSON.stringify(DB)); }
+  catch(e){ console.warn("Could not snapshot database", e); return; }
+  idbSet(DB_KEY, snapshot).catch(e => {
     console.warn("Could not save database", e);
     toast("Storage full — some data may not be saved.");
-  }
+  });
 }
 
 /* ============================================================================
@@ -3565,13 +3599,14 @@ function seedDemoPack(){
 /* ============================================================================
    INIT
    ============================================================================ */
-loadDB();
-seedDemoPack();
-renderDashboard();
-updatePlayPauseUI();
-requestAnimationFrame(() => {
-  drawIdleWave(mainCanvas, "#4c4c57");
-  drawIdleWave(recCanvas, "#4c4c57");
+loadDB().finally(() => {
+  seedDemoPack();
+  renderDashboard();
+  updatePlayPauseUI();
+  requestAnimationFrame(() => {
+    drawIdleWave(mainCanvas, "#4c4c57");
+    drawIdleWave(recCanvas, "#4c4c57");
+  });
 });
 </script>
 </body>
