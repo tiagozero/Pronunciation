@@ -2606,7 +2606,17 @@ function updateChipsLight(){
   if(activeChip && window.__lastChipScroll !== scrollKey &&
      document.getElementById("viewPractice").classList.contains("srt-mode")){
     window.__lastChipScroll = scrollKey;
-    activeChip.scrollIntoView({block:"nearest", behavior:"smooth"});
+    /* Re-centre the active line in the items column so the highlight
+       keeps moving up instead of sticking to the bottom edge. */
+    const col = grid.closest(".srt-right");
+    if(col && col.scrollHeight > col.clientHeight){
+      const cr = col.getBoundingClientRect();
+      const r  = activeChip.getBoundingClientRect();
+      col.scrollTo({
+        top: col.scrollTop + (r.top - cr.top) - (col.clientHeight - r.height) / 2,
+        behavior: "smooth"
+      });
+    }
   }
 
   const doneCount = ex.items.filter(it => currentProg.completed[ex.id + "::" + it.id]).length;
@@ -2782,6 +2792,8 @@ function renderNav(){
 
 function renderChips(){
   const grid = document.getElementById("chipGrid");
+  const scrollCol = grid.closest(".srt-right");
+  const keepScroll = scrollCol ? scrollCol.scrollTop : 0;
   grid.innerHTML = "";
   const ex = currentEx();
   if(!ex) return;
@@ -2805,6 +2817,7 @@ function renderChips(){
   const doneCount = ex.items.filter(it => currentProg.completed[ex.id + "::" + it.id]).length;
   document.getElementById("itemsCount").textContent = doneCount + " / " + ex.items.length + " done";
   document.getElementById("itemsTag").textContent = "Items · " + ex.title;
+  if(scrollCol) scrollCol.scrollTop = keepScroll;
   updateChipsLight();
 }
 
